@@ -6,10 +6,11 @@ import { useFetch } from '../hooks/useApi.js';
 import { Badge, Campo, Cargando, EncabezadoPagina, EstadoVacio, MensajeError, Modal } from '../components/ui.jsx';
 import { DIAS_SEMANA, aInputFecha, capitalizar, formatoFecha, hoyISO } from '../lib/format.js';
 
-function FormularioGrupo({ valorInicial, tutores, onCerrar, onGuardado }) {
+function FormularioGrupo({ valorInicial, tutores, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
   const [form, setForm] = useState({
     nombre: valorInicial?.nombre ?? '',
+    courseId: valorInicial?.courseId ?? cursos[0]?.id ?? '',
     diaSemana: valorInicial?.diaSemana ?? 'SABADO',
     hora: valorInicial?.hora ?? '09:00',
     fechaInicio: aInputFecha(valorInicial?.fechaInicio) || hoyISO(),
@@ -27,6 +28,7 @@ function FormularioGrupo({ valorInicial, tutores, onCerrar, onGuardado }) {
     try {
       const cuerpo = {
         nombre: form.nombre,
+        courseId: form.courseId,
         diaSemana: form.diaSemana,
         hora: form.hora,
         fechaInicio: form.fechaInicio,
@@ -55,6 +57,30 @@ function FormularioGrupo({ valorInicial, tutores, onCerrar, onGuardado }) {
             placeholder="Ej: Grupo Serpientes"
             required
           />
+        </Campo>
+
+        <Campo
+          etiqueta="Curso"
+          requerido
+          ayuda={
+            editando
+              ? 'Cambiar el curso reinicia la referencia del avance: el historial ya registrado queda ligado a las clases del curso anterior.'
+              : 'El grupo avanza por el currículo de este curso.'
+          }
+        >
+          <select
+            className="input"
+            value={form.courseId}
+            onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+            required
+          >
+            <option value="">Selecciona un curso</option>
+            {cursos.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
         </Campo>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -147,18 +173,22 @@ export default function Grupos() {
   const { esAdmin } = useAuth();
   const { data: grupos, cargando, error, recargar } = useFetch('/groups');
   const { data: tutoresResp } = useFetch('/users', { rol: 'TUTOR', activo: 'true', limit: 100 }, { skip: !esAdmin });
+  const { data: cursos } = useFetch('/curriculum/courses', { activo: 'true' }, { skip: !esAdmin });
   const [modal, setModal] = useState(null);
 
   if (cargando) return <Cargando />;
   if (error) return <MensajeError error={error} onReintentar={recargar} />;
 
   const tutores = tutoresResp?.items ?? [];
+  const listaCursos = cursos ?? [];
 
   return (
     <>
       <EncabezadoPagina
         titulo="Grupos"
-        descripcion={esAdmin ? 'Cohortes que llevan el curso en paralelo.' : 'Los grupos que tienes asignados.'}
+        descripcion={
+          esAdmin ? 'Cohortes en marcha. Cada una sigue el currículo de su curso.' : 'Los grupos que tienes asignados.'
+        }
         acciones={
           esAdmin && (
             <button type="button" className="btn-primary" onClick={() => setModal({ valorInicial: null })}>
@@ -190,6 +220,9 @@ export default function Grupos() {
                   </div>
                   <p className="mt-1 text-sm text-slate-500">
                     {capitalizar(g.diaSemana)} · {g.hora}
+                  </p>
+                  <p className="mt-1">
+                    <Badge tono="azul">{g.course?.nombre ?? 'Sin curso'}</Badge>
                   </p>
                 </div>
                 {esAdmin && (
@@ -239,6 +272,7 @@ export default function Grupos() {
         <FormularioGrupo
           valorInicial={modal.valorInicial}
           tutores={tutores}
+          cursos={listaCursos}
           onCerrar={() => setModal(null)}
           onGuardado={() => {
             setModal(null);

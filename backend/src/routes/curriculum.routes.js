@@ -11,7 +11,18 @@ const router = Router();
 // El curriculo lo lee cualquier usuario autenticado; solo el admin lo edita.
 router.use(authenticate);
 
+const courseSchema = z.object({
+  nombre: z.string().min(2, 'El nombre del curso es obligatorio'),
+  descripcion: z.string().optional().nullable(),
+  duracionMeses: z.coerce.number().int().positive().optional().nullable(),
+  edadSugerida: z.string().optional().nullable(),
+  color: z.string().optional().nullable(),
+  orden: z.coerce.number().int().positive().optional(),
+  activo: z.boolean().optional(),
+});
+
 const moduleSchema = z.object({
+  courseId: z.string().min(1, 'Debes indicar el curso'),
   numero: z.coerce.number().int().positive('El numero de modulo debe ser positivo'),
   nombre: z.string().min(2, 'El nombre es obligatorio'),
   objetivo: z.string().min(2, 'El objetivo es obligatorio'),
@@ -29,15 +40,89 @@ const classSchema = z.object({
   recursosUrl: z.string().url('Debe ser una URL valida').optional().nullable().or(z.literal('')),
 });
 
+// --- Cursos --------------------------------------------------------------
+
+router.get(
+  '/courses',
+  asyncHandler(async (req, res) => {
+    const courses = await prisma.course.findMany({
+      where: req.query.activo !== undefined ? { activo: req.query.activo === 'true' } : {},
+      orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
+      include: {
+        _count: { select: { modulos: true, grupos: true } },
+        modulos: { select: { _count: { select: { clases: true } } } },
+      },
+    });
+
+    res.json(
+      toJSON(
+        courses.map(({ modulos, ...curso }) => ({
+          ...curso,
+          totalClases: modulos.reduce((acc, m) => acc + m._count.clases, 0),
+        })),
+      ),
+    );
+  }),
+);
+
+router.post(
+  '/courses',
+  authorize('ADMIN'),
+  validate(courseSchema),
+  asyncHandler(async (req, res) => {
+    const { orden, ...rest } = req.body;
+    const siguienteOrden = orden ?? (await prisma.course.count()) + 1;
+    const course = await prisma.course.create({ data: { ...rest, orden: siguienteOrden } });
+    res.status(201).json(toJSON(course));
+  }),
+);
+
+router.patch(
+  '/courses/:id',
+  authorize('ADMIN'),
+  validate(courseSchema.partial()),
+  asyncHandler(async (req, res) => {
+    const course = await prisma.course.update({ where: { id: req.params.id }, data: req.body });
+    res.json(toJSON(course));
+  }),
+);
+
+router.delete(
+  '/courses/:id',
+  authorize('ADMIN'),
+  asyncHandler(async (req, res) => {
+    // Un curso con grupos no se borra: se archiva para conservar el historial.
+    const grupos = await prisma.group.count({ where: { courseId: req.params.id } });
+    if (grupos > 0) {
+      throw ApiError.conflict(
+        `Este curso tiene ${grupos} grupo(s) asociados. Archívalo en lugar de eliminarlo para conservar su historial.`,
+      );
+    }
+
+    const clases = await prisma.class.count({ where: { module: { courseId: req.params.id } } });
+    if (clases > 0 && req.query.force !== 'true') {
+      throw ApiError.conflict(
+        `El curso tiene ${clases} clase(s) en su curriculo. Repite con ?force=true para eliminarlo junto con ellas.`,
+      );
+    }
+
+    await prisma.course.delete({ where: { id: req.params.id } });
+    res.json({ mensaje: 'Curso eliminado' });
+  }),
+);
+
 // --- Modulos -------------------------------------------------------------
 
 router.get(
   '/modules',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    // Sin courseId se devuelve el curriculo de todos los cursos.
     const modules = await prisma.module.findMany({
-      orderBy: { orden: 'asc' },
+      where: req.query.courseId ? { courseId: req.query.courseId } : {},
+      orderBy: [{ course: { orden: 'asc' } }, { orden: 'asc' }],
       include: {
         clases: { orderBy: { numeroClase: 'asc' } },
+        course: { select: { id: true, nombre: true } },
         _count: { select: { clases: true } },
       },
     });
@@ -50,7 +135,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const module = await prisma.module.findUnique({
       where: { id: req.params.id },
-      include: { clases: { orderBy: { numeroClase: 'asc' } } },
+      include: { clases: { orderBy: { numeroClase: 'asc' } }, course: true },
     });
     if (!module) throw ApiError.notFound('Modulo no encontrado');
     res.json(toJSON(module));
@@ -62,9 +147,12 @@ router.post(
   authorize('ADMIN'),
   validate(moduleSchema),
   asyncHandler(async (req, res) => {
-    const { orden, numero, ...rest } = req.body;
+    const { orden, numero, courseId, ...rest } = req.body;
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) throw ApiError.notFound('Curso no encontrado');
+
     const module = await prisma.module.create({
-      data: { ...rest, numero, orden: orden ?? numero },
+      data: { ...rest, courseId, numero, orden: orden ?? numero },
     });
     res.status(201).json(toJSON(module));
   }),

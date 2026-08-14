@@ -15,8 +15,93 @@ import {
 
 const MODULO_VACIO = { numero: '', nombre: '', objetivo: '', descripcion: '' };
 const CLASE_VACIA = { numeroClase: '', nombre: '', objetivo: '', contenido: '', conceptosClave: '', recursosUrl: '' };
+const CURSO_VACIO = { nombre: '', descripcion: '', duracionMeses: '', edadSugerida: '' };
 
-function FormularioModulo({ abierto, valorInicial, onCerrar, onGuardado }) {
+function FormularioCurso({ valorInicial, onCerrar, onGuardado }) {
+  const [form, setForm] = useState(valorInicial ?? CURSO_VACIO);
+  const [error, setError] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const editando = Boolean(valorInicial?.id);
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    try {
+      const cuerpo = {
+        nombre: form.nombre,
+        descripcion: form.descripcion || null,
+        duracionMeses: form.duracionMeses === '' ? null : Number(form.duracionMeses),
+        edadSugerida: form.edadSugerida || null,
+      };
+      if (editando) await api.patch(`/curriculum/courses/${valorInicial.id}`, cuerpo);
+      else await api.post('/curriculum/courses', cuerpo);
+      onGuardado();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Modal abierto titulo={editando ? 'Editar curso' : 'Nuevo curso'} onCerrar={onCerrar}>
+      <form onSubmit={enviar} className="space-y-4">
+        <Campo etiqueta="Nombre del curso" requerido>
+          <input
+            className="input"
+            value={form.nombre}
+            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+            placeholder="Ej: Scratch para principiantes"
+            required
+          />
+        </Campo>
+
+        <Campo etiqueta="Descripción">
+          <textarea
+            className="input"
+            rows={2}
+            value={form.descripcion ?? ''}
+            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+          />
+        </Campo>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Campo etiqueta="Duración en meses">
+            <input
+              type="number"
+              min="1"
+              className="input"
+              value={form.duracionMeses ?? ''}
+              onChange={(e) => setForm({ ...form, duracionMeses: e.target.value })}
+            />
+          </Campo>
+          <Campo etiqueta="Edad sugerida">
+            <input
+              className="input"
+              value={form.edadSugerida ?? ''}
+              onChange={(e) => setForm({ ...form, edadSugerida: e.target.value })}
+              placeholder="8 a 10 años"
+            />
+          </Campo>
+        </div>
+
+        <MensajeError error={error} />
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" className="btn-secondary" onClick={onCerrar}>
+            Cancelar
+          </button>
+          <button type="submit" className="btn-primary" disabled={enviando}>
+            {enviando ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function FormularioModulo({ abierto, courseId, valorInicial, onCerrar, onGuardado }) {
   const [form, setForm] = useState(valorInicial ?? MODULO_VACIO);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -28,6 +113,7 @@ function FormularioModulo({ abierto, valorInicial, onCerrar, onGuardado }) {
     setError(null);
     try {
       const cuerpo = {
+        courseId,
         numero: Number(form.numero),
         nombre: form.nombre,
         objetivo: form.objetivo,
@@ -46,7 +132,7 @@ function FormularioModulo({ abierto, valorInicial, onCerrar, onGuardado }) {
   return (
     <Modal abierto={abierto} titulo={editando ? 'Editar módulo' : 'Nuevo módulo'} onCerrar={onCerrar}>
       <form onSubmit={enviar} className="space-y-4">
-        <Campo etiqueta="Número de módulo" requerido>
+        <Campo etiqueta="Número de módulo" requerido ayuda="La numeración es propia de cada curso.">
           <input
             type="number"
             min="1"
@@ -287,23 +373,44 @@ function Clase({ clase, esAdmin, onEditar, onEliminar }) {
 
 export default function Curriculo() {
   const { esAdmin } = useAuth();
-  const { data: modulos, cargando, error, recargar } = useFetch('/curriculum/modules');
+  const { data: cursos, cargando: cargandoCursos, error: errorCursos, recargar: recargarCursos } =
+    useFetch('/curriculum/courses');
 
+  const [cursoId, setCursoId] = useState(null);
+  // Mientras no se elija nada, se muestra el primer curso de la lista.
+  const cursoActivo = cursos?.find((c) => c.id === cursoId) ?? cursos?.[0] ?? null;
+
+  const {
+    data: modulos,
+    cargando,
+    error,
+    recargar,
+  } = useFetch('/curriculum/modules', { courseId: cursoActivo?.id }, { skip: !cursoActivo });
+
+  const [modalCurso, setModalCurso] = useState(null); // {valorInicial} | null
   const [modalModulo, setModalModulo] = useState(null); // {valorInicial} | null
   const [modalClase, setModalClase] = useState(null); // {moduleId, valorInicial} | null
   const [porEliminar, setPorEliminar] = useState(null); // {tipo, id, nombre}
   const [errorAccion, setErrorAccion] = useState(null);
 
+  const recargarTodo = () => {
+    recargarCursos();
+    recargar();
+  };
+
   const eliminar = async () => {
     setErrorAccion(null);
     try {
       const ruta =
-        porEliminar.tipo === 'modulo'
-          ? `/curriculum/modules/${porEliminar.id}`
-          : `/curriculum/classes/${porEliminar.id}`;
+        porEliminar.tipo === 'curso'
+          ? `/curriculum/courses/${porEliminar.id}`
+          : porEliminar.tipo === 'modulo'
+            ? `/curriculum/modules/${porEliminar.id}`
+            : `/curriculum/classes/${porEliminar.id}`;
       await api.del(ruta, porEliminar.forzar ? { force: 'true' } : undefined);
       setPorEliminar(null);
-      recargar();
+      if (porEliminar.tipo === 'curso') setCursoId(null);
+      recargarTodo();
     } catch (err) {
       // El backend pide confirmacion extra si ya hay clases dictadas.
       if (err.status === 409) {
@@ -315,31 +422,124 @@ export default function Curriculo() {
     }
   };
 
-  if (cargando) return <Cargando />;
-  if (error) return <MensajeError error={error} onReintentar={recargar} />;
+  if (cargandoCursos) return <Cargando />;
+  if (errorCursos) return <MensajeError error={errorCursos} onReintentar={recargarCursos} />;
 
-  const totalClases = modulos.reduce((acc, m) => acc + m.clases.length, 0);
+  if (!cursoActivo) {
+    return (
+      <>
+        <EncabezadoPagina titulo="Currículo" descripcion="Los programas que ofrece la escuela." />
+        <EstadoVacio
+          titulo="Todavía no hay cursos"
+          descripcion={
+            esAdmin
+              ? 'Crea el primer curso para empezar a construir su plan de módulos y clases.'
+              : 'Cuando el administrador cree un curso aparecerá aquí.'
+          }
+          icono="📚"
+          accion={
+            esAdmin && (
+              <button type="button" className="btn-primary" onClick={() => setModalCurso({ valorInicial: null })}>
+                + Nuevo curso
+              </button>
+            )
+          }
+        />
+        {modalCurso && (
+          <FormularioCurso
+            valorInicial={modalCurso.valorInicial}
+            onCerrar={() => setModalCurso(null)}
+            onGuardado={() => {
+              setModalCurso(null);
+              recargarCursos();
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  const totalClases = (modulos ?? []).reduce((acc, m) => acc + m.clases.length, 0);
 
   return (
     <>
       <EncabezadoPagina
-        titulo="Currículo del curso"
-        descripcion={`${modulos.length} módulos · ${totalClases} clases · 1 clase por semana`}
+        titulo="Currículo"
+        descripcion={`${cursos.length} curso${cursos.length === 1 ? '' : 's'} · cada uno con su propio plan de clases.`}
         acciones={
           esAdmin && (
-            <button type="button" className="btn-primary" onClick={() => setModalModulo({ valorInicial: null })}>
-              + Nuevo módulo
+            <button type="button" className="btn-secondary" onClick={() => setModalCurso({ valorInicial: null })}>
+              + Nuevo curso
             </button>
           )
         }
       />
 
-      <MensajeError error={errorAccion} />
+      {/* Selector de curso: cada curso tiene su propio currículo independiente. */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {cursos.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setCursoId(c.id)}
+            className={`rounded-lg border px-4 py-2 text-left transition ${
+              c.id === cursoActivo.id
+                ? 'border-marca-500 bg-marca-50 text-marca-800'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+            }`}
+          >
+            <span className="block text-sm font-semibold">{c.nombre}</span>
+            <span className="block text-xs text-slate-500">
+              {c._count.modulos} módulos · {c.totalClases} clases · {c._count.grupos} grupo
+              {c._count.grupos === 1 ? '' : 's'}
+            </span>
+          </button>
+        ))}
+      </div>
 
-      {modulos.length === 0 ? (
+      <div className="card mb-5 flex flex-wrap items-start justify-between gap-3 p-5">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">{cursoActivo.nombre}</h2>
+          {cursoActivo.descripcion && <p className="mt-1 text-sm text-slate-500">{cursoActivo.descripcion}</p>}
+          <p className="mt-2 text-xs text-slate-400">
+            {(modulos ?? []).length} módulos · {totalClases} clases
+            {cursoActivo.duracionMeses ? ` · ${cursoActivo.duracionMeses} meses` : ''}
+            {cursoActivo.edadSugerida ? ` · ${cursoActivo.edadSugerida}` : ''}
+          </p>
+        </div>
+
+        {esAdmin && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-primary text-xs" onClick={() => setModalModulo({ valorInicial: null })}>
+              + Nuevo módulo
+            </button>
+            <button
+              type="button"
+              className="btn-secondary text-xs"
+              onClick={() => setModalCurso({ valorInicial: cursoActivo })}
+            >
+              Editar curso
+            </button>
+            <button
+              type="button"
+              className="btn text-xs text-rose-600 hover:bg-rose-50"
+              onClick={() => setPorEliminar({ tipo: 'curso', id: cursoActivo.id, nombre: cursoActivo.nombre })}
+            >
+              Eliminar curso
+            </button>
+          </div>
+        )}
+      </div>
+
+      <MensajeError error={errorAccion} />
+      {error && <MensajeError error={error} onReintentar={recargar} />}
+
+      {cargando ? (
+        <Cargando />
+      ) : (modulos ?? []).length === 0 ? (
         <EstadoVacio
-          titulo="El currículo está vacío"
-          descripcion="Crea el primer módulo para empezar a construir el plan del curso."
+          titulo="Este curso todavía no tiene módulos"
+          descripcion="Crea el primer módulo para empezar a construir su plan de clases."
           icono="📚"
         />
       ) : (
@@ -406,14 +606,26 @@ export default function Curriculo() {
         </div>
       )}
 
+      {modalCurso && (
+        <FormularioCurso
+          valorInicial={modalCurso.valorInicial}
+          onCerrar={() => setModalCurso(null)}
+          onGuardado={() => {
+            setModalCurso(null);
+            recargarCursos();
+          }}
+        />
+      )}
+
       {modalModulo && (
         <FormularioModulo
           abierto
+          courseId={cursoActivo.id}
           valorInicial={modalModulo.valorInicial}
           onCerrar={() => setModalModulo(null)}
           onGuardado={() => {
             setModalModulo(null);
-            recargar();
+            recargarTodo();
           }}
         />
       )}
@@ -426,14 +638,20 @@ export default function Curriculo() {
           onCerrar={() => setModalClase(null)}
           onGuardado={() => {
             setModalClase(null);
-            recargar();
+            recargarTodo();
           }}
         />
       )}
 
       <Confirmacion
         abierto={Boolean(porEliminar)}
-        titulo={porEliminar?.tipo === 'modulo' ? 'Eliminar módulo' : 'Eliminar clase'}
+        titulo={
+          porEliminar?.tipo === 'curso'
+            ? 'Eliminar curso'
+            : porEliminar?.tipo === 'modulo'
+              ? 'Eliminar módulo'
+              : 'Eliminar clase'
+        }
         mensaje={
           porEliminar?.aviso ??
           `¿Seguro que quieres eliminar "${porEliminar?.nombre}"? Esta acción no se puede deshacer.`

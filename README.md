@@ -1,7 +1,9 @@
 # 🐍 Python Kids — Plataforma del curso
 
-Plataforma web para gestionar un curso de Python desde cero dirigido a niños de 8 a 10 años:
-11 meses, una clase de una hora por semana, organizado en **11 módulos de 4 clases** (44 clases).
+Plataforma web para gestionar los cursos de programación para niños. Nace con el curso de
+Python desde cero para niños de 8 a 10 años —11 meses, una clase de una hora por semana,
+organizado en **11 módulos de 4 clases** (44 clases)— y admite **varios cursos en paralelo**,
+cada uno con su propio currículo.
 
 Centraliza el currículo, la gestión de usuarios por rol, el seguimiento del avance y la
 asistencia de cada estudiante, el buzón de sugerencias y el control financiero del negocio.
@@ -64,6 +66,7 @@ configurar CORS en desarrollo.
 | Acción                                   | Admin | Tutor            | Estudiante/Acudiente |
 | ---------------------------------------- | :---: | :--------------: | :------------------: |
 | Ver currículo                            |  ✅   | ✅ (solo lectura) | ✅ (solo lectura)     |
+| Crear y editar cursos                    |  ✅   | ❌               | ❌                    |
 | Editar módulos y clases                  |  ✅   | ❌               | ❌                    |
 | Gestionar usuarios                       |  ✅   | ❌               | ❌                    |
 | Gestionar estudiantes y grupos           |  ✅   | ❌               | ❌                    |
@@ -83,6 +86,9 @@ consulta), no solo en la interfaz: entrar por URL directa a una sección ajena d
 ## Modelo de datos
 
 ```
+Course ─┬─< Module ─< Class
+        └─< Group
+
 User ─┬─< Group (tutor)
       ├─< Student (cuenta de acceso de la familia)
       └─< Suggestion / Payment / Expense (autor o registrador)
@@ -91,6 +97,21 @@ Student ─┬─< StudentGroup >─ Group
          ├─< Attendance >─ GroupProgress >─ Class >─ Module
          └─< Payment
 ```
+
+### Varios cursos en paralelo
+
+`Course` es el programa completo (Python, Scratch, robótica…). Cada curso tiene su propio
+currículo y cada grupo cursa exactamente uno, de modo que los cursos no se mezclan:
+
+- El número de módulo es único **por curso**: cada curso tiene su propio "Módulo 1".
+- El avance de un grupo se mide contra las clases de **su** curso. Agregar un curso nuevo no
+  altera el porcentaje de los grupos que ya existen.
+- En el detalle de un grupo solo aparece el currículo de su curso, y el backend rechaza
+  registrar avance o asistencia de una clase que pertenezca a otro.
+- Una familia puede tener a su hijo en varios cursos a la vez: el panel muestra un bloque de
+  avance por curso.
+- Un curso con grupos no se puede eliminar; se archiva (`activo = false`) para conservar el
+  historial.
 
 ### Por qué `Student` está separado de `User`
 
@@ -132,7 +153,11 @@ Todas las rutas cuelgan de `/api` y, salvo el login, requieren la cabecera
 ### Currículo
 | Método | Ruta                                  | Quién  |
 | ------ | ------------------------------------- | ------ |
-| GET    | `/curriculum/modules`                 | sesión |
+| GET    | `/curriculum/courses`                 | sesión |
+| POST   | `/curriculum/courses`                 | admin  |
+| PATCH  | `/curriculum/courses/:id`             | admin  |
+| DELETE | `/curriculum/courses/:id`             | admin  |
+| GET    | `/curriculum/modules?courseId=`       | sesión |
 | GET    | `/curriculum/modules/:id`             | sesión |
 | POST   | `/curriculum/modules`                 | admin  |
 | PATCH  | `/curriculum/modules/:id`             | admin  |
@@ -142,8 +167,11 @@ Todas las rutas cuelgan de `/api` y, salvo el login, requieren la cabecera
 | PATCH  | `/curriculum/classes/:id`             | admin  |
 | DELETE | `/curriculum/classes/:id`             | admin  |
 
+`GET /curriculum/modules` sin `courseId` devuelve el currículo de todos los cursos.
+
 Borrar un módulo o clase con historial de clases dictadas responde `409`; hay que repetir
-la petición con `?force=true` para confirmar.
+la petición con `?force=true` para confirmar. Un curso con grupos asociados nunca se borra:
+la API responde `409` y sugiere archivarlo.
 
 ### Usuarios y estudiantes
 | Método | Ruta                | Quién  | Notas                                     |
@@ -256,14 +284,14 @@ Si prefieres dos servicios, despliega el frontend con `npm run build -w frontend
 backend/
   prisma/
     schema.prisma      modelo de datos
-    curriculum.js      los 11 módulos y sus 44 clases
+    curriculum.js      los 11 módulos y sus 44 clases del curso de Python
     seed.js            siembra idempotente
   src/
     app.js, server.js  arranque de Express
     config/            variables de entorno validadas
     middleware/        auth, validación (zod) y errores
     routes/            un archivo por área funcional
-    services/          cálculos de balance y cartera
+    services/          cálculos de balance, cartera y avance por curso
 frontend/
   src/
     api/               cliente HTTP y manejo del token

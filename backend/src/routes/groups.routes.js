@@ -5,6 +5,11 @@ import { ApiError, asyncHandler } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
 import { accountStudentIds, authenticate, authorize, isAdmin, isTutor } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import {
+  porcentajeAvance,
+  totalClasesDeCurso,
+  totalClasesPorCurso,
+} from '../services/curriculum.service.js';
 
 const router = Router();
 router.use(authenticate);
@@ -13,6 +18,7 @@ const DIAS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DO
 
 const groupSchema = z.object({
   nombre: z.string().min(2, 'El nombre del grupo es obligatorio'),
+  courseId: z.string().min(1, 'Debes elegir el curso que dicta este grupo'),
   diaSemana: z.enum(DIAS),
   hora: z.string().regex(/^\d{2}:\d{2}$/, 'La hora debe tener formato HH:MM'),
   fechaInicio: z.coerce.date(),
@@ -56,6 +62,22 @@ async function loadVisibleGroup(req, groupId) {
   return group;
 }
 
+/**
+ * Carga una clase asegurando que pertenezca al curso del grupo: sin esto se
+ * podria registrar avance de un curso contra la cohorte de otro.
+ */
+async function cargarClaseDelCurso(classId, courseId) {
+  const clase = await prisma.class.findUnique({
+    where: { id: classId },
+    include: { module: { select: { courseId: true } } },
+  });
+  if (!clase) throw ApiError.notFound('Clase no encontrada');
+  if (clase.module.courseId !== courseId) {
+    throw ApiError.badRequest('Esa clase pertenece a otro curso, no al que dicta este grupo');
+  }
+  return clase;
+}
+
 /** Solo el admin o el tutor asignado pueden modificar el avance del grupo. */
 function assertCanTeach(req, group) {
   if (isAdmin(req)) return;
@@ -77,6 +99,7 @@ router.get(
       orderBy: [{ activo: 'desc' }, { nombre: 'asc' }],
       include: {
         tutor: { select: { id: true, nombre: true, email: true } },
+        course: { select: { id: true, nombre: true, color: true } },
         _count: { select: { inscripciones: true } },
       },
     });
@@ -91,11 +114,15 @@ router.get(
     const porGrupo = new Map();
     for (const p of ultimos) if (!porGrupo.has(p.groupId)) porGrupo.set(p.groupId, p);
 
+    // El avance se mide contra las clases del curso de cada grupo.
+    const totales = await totalClasesPorCurso(groups.map((g) => g.courseId));
+
     res.json(
       toJSON(
         groups.map((g) => ({
           ...g,
           ultimaClase: porGrupo.get(g.id) ?? null,
+          totalClases: totales.get(g.courseId) ?? 0,
         })),
       ),
     );
@@ -111,6 +138,7 @@ router.get(
       where: { id: req.params.id },
       include: {
         tutor: { select: { id: true, nombre: true, email: true, telefono: true } },
+        course: true,
         inscripciones: {
           include: { student: true },
           orderBy: { student: { nombre: 'asc' } },
@@ -119,7 +147,7 @@ router.get(
     });
 
     const [totalClases, dictadas] = await Promise.all([
-      prisma.class.count(),
+      totalClasesDeCurso(group.courseId),
       prisma.groupProgress.count({ where: { groupId: group.id, estado: 'DICTADA' } }),
     ]);
 
@@ -128,7 +156,7 @@ router.get(
       resumen: {
         totalClases,
         dictadas,
-        porcentaje: totalClases ? Math.round((dictadas / totalClases) * 100) : 0,
+        porcentaje: porcentajeAvance(dictadas, totalClases),
         estudiantesActivos: group.inscripciones.filter((i) => i.estado === 'ACTIVO').length,
       },
     });
@@ -222,7 +250,9 @@ router.get(
     const group = await loadVisibleGroup(req, req.params.id);
 
     const [modules, progreso] = await Promise.all([
+      // Solo el curriculo del curso que dicta este grupo.
       prisma.module.findMany({
+        where: { courseId: group.courseId },
         orderBy: { orden: 'asc' },
         include: { clases: { orderBy: { numeroClase: 'asc' } } },
       }),
@@ -256,8 +286,7 @@ router.put(
     const group = await loadVisibleGroup(req, req.params.id);
     assertCanTeach(req, group);
 
-    const clase = await prisma.class.findUnique({ where: { id: req.params.classId } });
-    if (!clase) throw ApiError.notFound('Clase no encontrada');
+    const clase = await cargarClaseDelCurso(req.params.classId, group.courseId);
 
     const { estado, notas } = req.body;
     const existente = await prisma.groupProgress.findUnique({
@@ -321,8 +350,7 @@ router.put(
     const group = await loadVisibleGroup(req, req.params.id);
     assertCanTeach(req, group);
 
-    const clase = await prisma.class.findUnique({ where: { id: req.params.classId } });
-    if (!clase) throw ApiError.notFound('Clase no encontrada');
+    const clase = await cargarClaseDelCurso(req.params.classId, group.courseId);
 
     // Solo se admite asistencia de estudiantes activos en el grupo.
     const inscritos = await prisma.studentGroup.findMany({
