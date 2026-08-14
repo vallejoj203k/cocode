@@ -12,11 +12,29 @@ const CON_DEMO = process.env.SEED_DEMO !== 'false';
 const hash = (plain) => bcrypt.hash(plain, 10);
 const periodo = (date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 
-/** Crea o actualiza los 11 modulos con sus 4 clases. */
+// Id estable del curso base: lo crea la migracion que introdujo los cursos, y
+// el seed lo reutiliza para no duplicarlo.
+const CURSO_PYTHON_ID = 'curso-python-kids';
+
+/** Crea o actualiza el curso base con sus 11 modulos de 4 clases. */
 async function seedCurriculum() {
+  const curso = await prisma.course.upsert({
+    where: { id: CURSO_PYTHON_ID },
+    update: {},
+    create: {
+      id: CURSO_PYTHON_ID,
+      nombre: 'Python para ninos',
+      descripcion:
+        'Curso de Python desde cero: 11 modulos de 4 clases, una clase semanal de una hora.',
+      duracionMeses: 11,
+      edadSugerida: '8 a 10 anos',
+      orden: 1,
+    },
+  });
+
   for (const modulo of curriculum) {
     const registro = await prisma.module.upsert({
-      where: { numero: modulo.numero },
+      where: { courseId_numero: { courseId: curso.id, numero: modulo.numero } },
       update: {
         nombre: modulo.nombre,
         objetivo: modulo.objetivo,
@@ -24,6 +42,7 @@ async function seedCurriculum() {
         orden: modulo.numero,
       },
       create: {
+        courseId: curso.id,
         numero: modulo.numero,
         nombre: modulo.nombre,
         objetivo: modulo.objetivo,
@@ -53,8 +72,12 @@ async function seedCurriculum() {
     }
   }
 
-  const [modulos, clases] = await Promise.all([prisma.module.count(), prisma.class.count()]);
-  console.log(`  curriculo: ${modulos} modulos, ${clases} clases`);
+  const [modulos, clases] = await Promise.all([
+    prisma.module.count({ where: { courseId: curso.id } }),
+    prisma.class.count({ where: { module: { courseId: curso.id } } }),
+  ]);
+  console.log(`  curso "${curso.nombre}": ${modulos} modulos, ${clases} clases`);
+  return curso;
 }
 
 async function seedAdmin() {
@@ -80,7 +103,7 @@ async function crearUsuario({ nombre, email, rol, telefono }) {
   });
 }
 
-async function seedDemo(admin) {
+async function seedDemo(admin, curso) {
   // --- Tutores ---
   const [tutorAna, tutorCarlos] = await Promise.all([
     crearUsuario({ nombre: 'Ana Martinez', email: 'ana.tutora@pythonkids.com', rol: 'TUTOR', telefono: '3001112233' }),
@@ -134,7 +157,7 @@ async function seedDemo(admin) {
 
   async function crearGrupo({ nombre, tutorId, diaSemana, hora }) {
     const existente = await prisma.group.findFirst({ where: { nombre } });
-    const data = { nombre, tutorId, diaSemana, hora, fechaInicio: inicio, cupoMaximo: 8 };
+    const data = { nombre, tutorId, diaSemana, hora, fechaInicio: inicio, cupoMaximo: 8, courseId: curso.id };
     return existente
       ? prisma.group.update({ where: { id: existente.id }, data })
       : prisma.group.create({ data });
@@ -171,6 +194,7 @@ async function seedDemo(admin) {
 
   // --- Avance y asistencia: el grupo A lleva 6 clases y el B lleva 4 ---
   const clasesOrdenadas = await prisma.class.findMany({
+    where: { module: { courseId: curso.id } },
     orderBy: [{ module: { orden: 'asc' } }, { numeroClase: 'asc' }],
   });
 
@@ -301,9 +325,9 @@ async function seedDemo(admin) {
 
 async function main() {
   console.log('Sembrando base de datos...');
-  await seedCurriculum();
+  const curso = await seedCurriculum();
   const admin = await seedAdmin();
-  if (CON_DEMO) await seedDemo(admin);
+  if (CON_DEMO) await seedDemo(admin, curso);
   console.log('Listo.');
 }
 

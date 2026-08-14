@@ -132,10 +132,15 @@ model Group {
   tutorId String?
   tutor   User?   @relation("GroupTutor", fields: [tutorId], references: [id], onDelete: SetNull)
 
+  /// Curso que sigue esta cohorte. Restrict: no se borra un curso con grupos.
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
   inscripciones StudentGroup[]
   progreso      GroupProgress[]
 
   @@index([tutorId])
+  @@index([courseId])
   @@map("groups")
 }
 
@@ -158,9 +163,33 @@ model StudentGroup {
 // Curriculo
 // ---------------------------------------------------------------------------
 
+/// Un curso es un programa completo con su propio curriculo (por ejemplo
+/// "Python para ninos" o "Scratch"). Cada grupo cursa exactamente un curso, y
+/// su avance se mide solo contra las clases de ese curso.
+model Course {
+  id            String   @id @default(cuid())
+  nombre        String
+  descripcion   String?
+  /// Duracion estimada en meses, solo informativa.
+  duracionMeses Int?
+  /// Rango de edad sugerido, por ejemplo "8 a 10 anos".
+  edadSugerida  String?
+  color         String? // color de acento para distinguirlo en la interfaz
+  activo        Boolean  @default(true)
+  orden         Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  modulos Module[]
+  grupos  Group[]
+
+  @@index([orden])
+  @@map("courses")
+}
+
 model Module {
   id          String   @id @default(cuid())
-  numero      Int      @unique
+  numero      Int
   nombre      String
   objetivo    String
   descripcion String?
@@ -168,11 +197,16 @@ model Module {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   // El curso define 4 clases por modulo, pero el modelo no lo fuerza para
   // poder flexibilizarlo a futuro.
   clases Class[]
 
-  @@index([orden])
+  // La numeracion es por curso: cada curso tiene su propio modulo 1.
+  @@unique([courseId, numero])
+  @@index([courseId, orden])
   @@map("modules")
 }
 

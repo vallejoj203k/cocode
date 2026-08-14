@@ -519,9 +519,9 @@ export default function GrupoDetalle() {
     <>
       <EncabezadoPagina
         titulo={grupo.nombre}
-        descripcion={`${capitalizar(grupo.diaSemana)} ${grupo.hora} · Tutor: ${grupo.tutor?.nombre ?? 'sin asignar'} · ${
-          grupo.resumen.estudiantesActivos
-        } estudiantes`}
+        descripcion={`${grupo.course?.nombre ?? 'Sin curso'} · ${capitalizar(grupo.diaSemana)} ${grupo.hora} · Tutor: ${
+          grupo.tutor?.nombre ?? 'sin asignar'
+        } · ${grupo.resumen.estudiantesActivos} estudiantes`}
         acciones={
           <Link to="/grupos" className="btn-secondary">
             ← Volver

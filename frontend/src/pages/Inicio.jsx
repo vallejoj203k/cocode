@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useApi.js';
-import { BarraProgreso, Cargando, EncabezadoPagina, EstadoVacio, MensajeError, Tarjeta } from '../components/ui.jsx';
+import {
+  Badge,
+  BarraProgreso,
+  Cargando,
+  EncabezadoPagina,
+  EstadoVacio,
+  MensajeError,
+  Tarjeta,
+} from '../components/ui.jsx';
 import { capitalizar, formatoFecha, formatoMoneda, formatoPeriodo } from '../lib/format.js';
 
 /** Grafico de barras ingresos vs gastos, sin dependencias externas. */
@@ -54,9 +62,9 @@ function InicioAdmin({ data }) {
         <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="🧒" />
         <Tarjeta titulo="Grupos activos" valor={tarjetas.gruposActivos} icono="👥" tono="violeta" />
         <Tarjeta
-          titulo="Currículo"
-          valor={`${tarjetas.modulos} módulos`}
-          detalle={`${tarjetas.totalClases} clases en total`}
+          titulo="Cursos"
+          valor={tarjetas.cursos}
+          detalle={`${tarjetas.modulos} módulos · ${tarjetas.totalClases} clases`}
           icono="📚"
           tono="ambar"
         />
@@ -137,6 +145,7 @@ function InicioAdmin({ data }) {
               <thead>
                 <tr>
                   <th>Grupo</th>
+                  <th>Curso</th>
                   <th>Tutor</th>
                   <th>Estudiantes</th>
                   <th className="w-64">Avance del curso</th>
@@ -150,10 +159,13 @@ function InicioAdmin({ data }) {
                         {g.nombre}
                       </Link>
                     </td>
+                    <td>
+                      <Badge tono="azul">{g.curso}</Badge>
+                    </td>
                     <td className="text-slate-600">{g.tutor}</td>
                     <td className="text-slate-600">{g.estudiantes}</td>
                     <td>
-                      <BarraProgreso valor={g.avance} etiqueta={`${g.clasesDictadas} de ${tarjetas.totalClases} clases`} />
+                      <BarraProgreso valor={g.avance} etiqueta={`${g.clasesDictadas} de ${g.totalClases} clases`} />
                     </td>
                   </tr>
                 ))}
@@ -175,7 +187,7 @@ function InicioTutor({ data }) {
         <Tarjeta titulo="Mis grupos" valor={tarjetas.gruposAsignados} icono="👥" />
         <Tarjeta titulo="Mis estudiantes" valor={tarjetas.estudiantes} icono="🧒" tono="violeta" />
         <Tarjeta titulo="Clases dictadas" valor={tarjetas.clasesDictadas} icono="✅" tono="verde" />
-        <Tarjeta titulo="Clases del curso" valor={tarjetas.totalClases} icono="📚" tono="ambar" />
+        <Tarjeta titulo="Cursos que dictas" valor={tarjetas.cursos} icono="📚" tono="ambar" />
       </div>
 
       <h2 className="mt-8 text-lg font-semibold text-slate-900">Mis grupos</h2>
@@ -197,6 +209,9 @@ function InicioTutor({ data }) {
                   <p className="text-xs text-slate-500">
                     {capitalizar(g.diaSemana)} · {g.hora} · {g.estudiantes} estudiantes
                   </p>
+                  <p className="mt-1">
+                    <Badge tono="azul">{g.curso}</Badge>
+                  </p>
                 </div>
                 <Link to={`/grupos/${g.id}`} className="btn-ghost text-xs">
                   Abrir
@@ -204,7 +219,10 @@ function InicioTutor({ data }) {
               </div>
 
               <div className="mt-4">
-                <BarraProgreso valor={g.avance} etiqueta={`${g.clasesDictadas} clases dictadas`} />
+                <BarraProgreso
+                  valor={g.avance}
+                  etiqueta={`${g.clasesDictadas} de ${g.totalClases} clases dictadas`}
+                />
               </div>
 
               <dl className="mt-4 space-y-1 text-xs text-slate-500">
@@ -232,7 +250,7 @@ function InicioTutor({ data }) {
 }
 
 function InicioEstudiante({ data }) {
-  const { estudiantes, totalClases } = data;
+  const { estudiantes } = data;
 
   if (estudiantes.length === 0) {
     return (
@@ -252,11 +270,11 @@ function InicioEstudiante({ data }) {
             <div>
               <h2 className="text-lg font-bold text-slate-900">{e.nombre}</h2>
               <p className="text-sm text-slate-500">
-                {e.grupos.length
-                  ? e.grupos
-                      .map((g) => `${g.nombre} · ${capitalizar(g.diaSemana)} ${g.hora} · Tutor: ${g.tutor}`)
-                      .join(' | ')
-                  : 'Sin grupo asignado'}
+                Asistencia general:{' '}
+                <strong>
+                  {e.asistencia.porcentaje === null ? '—' : `${e.asistencia.porcentaje}%`}
+                </strong>{' '}
+                ({e.asistencia.presentes} de {e.asistencia.registradas} clases)
               </p>
             </div>
             <Link to={`/estudiantes/${e.id}`} className="btn-secondary text-xs">
@@ -264,41 +282,45 @@ function InicioEstudiante({ data }) {
             </Link>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-lg bg-marca-50 p-4">
-              <p className="text-xs font-medium text-marca-700">Avance del curso</p>
-              <p className="mt-1 text-2xl font-bold text-marca-800">{e.avance}%</p>
-              <p className="text-xs text-marca-700/80">
-                {e.clasesVistas} de {totalClases} clases
-              </p>
-            </div>
-            <div className="rounded-lg bg-emerald-50 p-4">
-              <p className="text-xs font-medium text-emerald-700">Asistencia</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-800">
-                {e.asistencia.porcentaje === null ? '—' : `${e.asistencia.porcentaje}%`}
-              </p>
-              <p className="text-xs text-emerald-700/80">
-                {e.asistencia.presentes} de {e.asistencia.registradas} clases
-              </p>
-            </div>
-            <div className="rounded-lg bg-amber-50 p-4">
-              <p className="text-xs font-medium text-amber-700">Última clase vista</p>
-              {e.ultimaClase ? (
-                <>
-                  <p className="mt-1 text-sm font-bold text-amber-900">{e.ultimaClase.nombre}</p>
-                  <p className="text-xs text-amber-800/80">
-                    Módulo {e.ultimaClase.modulo} · {formatoFecha(e.ultimaClase.fecha)}
-                  </p>
-                </>
-              ) : (
-                <p className="mt-1 text-sm text-amber-800">El curso aún no comienza</p>
-              )}
-            </div>
-          </div>
+          {e.cursos.length === 0 ? (
+            <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
+              Todavía no está inscrito en ningún curso.
+            </p>
+          ) : (
+            /* Un bloque por curso: cada uno avanza a su propio ritmo. */
+            <div className="mt-5 space-y-4">
+              {e.cursos.map((c) => (
+                <div key={c.grupoId} className="rounded-lg border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-slate-800">{c.cursoNombre}</p>
+                      <p className="text-xs text-slate-500">
+                        {c.grupoNombre} · {capitalizar(c.diaSemana)} {c.hora} · Tutor: {c.tutor}
+                      </p>
+                    </div>
+                    <Badge tono="azul">
+                      {c.clasesVistas} de {c.totalClases} clases
+                    </Badge>
+                  </div>
 
-          <div className="mt-4">
-            <BarraProgreso valor={e.avance} etiqueta="Progreso general" />
-          </div>
+                  <div className="mt-3">
+                    <BarraProgreso valor={c.avance} etiqueta="Avance" />
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    {c.ultimaClase ? (
+                      <>
+                        Última clase vista: <strong className="text-slate-700">{c.ultimaClase.nombre}</strong> (módulo{' '}
+                        {c.ultimaClase.modulo} · {formatoFecha(c.ultimaClase.fecha)})
+                      </>
+                    ) : (
+                      'El curso aún no comienza.'
+                    )}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
