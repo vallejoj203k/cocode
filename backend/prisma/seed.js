@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { curriculum } from './curriculum.js';
@@ -323,19 +324,30 @@ async function seedDemo(admin, curso) {
   console.log('  contrasena de todas las cuentas demo: Demo1234*');
 }
 
-async function main() {
-  console.log('Sembrando base de datos...');
-  const curso = await seedCurriculum();
-  const admin = await seedAdmin();
-  if (CON_DEMO) await seedDemo(admin, curso);
-  console.log('Listo.');
+/**
+ * Siembra la base. Es idempotente (todo son upserts), asi que se puede
+ * ejecutar tantas veces como haga falta sin duplicar nada.
+ */
+export async function seed() {
+  try {
+    console.log('Sembrando base de datos...');
+    const curso = await seedCurriculum();
+    const admin = await seedAdmin();
+    if (CON_DEMO) await seedDemo(admin, curso);
+    console.log('Listo.');
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .catch((error) => {
+// Solo se ejecuta sola cuando se invoca como `node prisma/seed.js`; si otro
+// modulo la importa (el bootstrap del arranque), decide el llamador.
+const invocadaDirectamente =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (invocadaDirectamente) {
+  seed().catch((error) => {
     console.error('Error al sembrar la base de datos:', error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
+    process.exit(1);
   });
+}
