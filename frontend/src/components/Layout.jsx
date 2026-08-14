@@ -39,13 +39,13 @@ function Enlaces({ rol, onNavegar }) {
 }
 
 export default function Layout() {
-  const { user, cerrarSesion } = useAuth();
+  const { user, cerrarSesion, rutaDeEntrada } = useAuth();
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   const salir = () => {
     cerrarSesion();
-    navigate('/login');
+    navigate(rutaDeEntrada);
   };
 
   return (

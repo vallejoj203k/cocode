@@ -12,6 +12,10 @@ const router = Router();
 const loginSchema = z.object({
   email: z.string().email('Email invalido'),
   password: z.string().min(1, 'La contrasena es obligatoria'),
+  // Puerta por la que se entra. La plataforma tiene una entrada para el equipo
+  // y otra para los estudiantes; el rol se valida aqui para que el rechazo
+  // llegue del servidor y no haya que entrar para despues expulsar al usuario.
+  portal: z.enum(['equipo', 'estudiantes']).optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -23,9 +27,9 @@ router.post(
   '/login',
   validate(loginSchema),
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, portal } = req.body;
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: email.trim().toLowerCase() },
     });
 
     // Mensaje generico para no revelar si el email existe.
@@ -33,6 +37,12 @@ router.post(
       throw ApiError.unauthorized('Email o contrasena incorrectos');
     }
     if (!user.activo) throw ApiError.forbidden('La cuenta esta desactivada');
+
+    if (portal === 'estudiantes' && user.rol !== 'ESTUDIANTE') {
+      throw ApiError.forbidden(
+        'Esta entrada es solo para estudiantes. Si eres del equipo, entra por la pagina del equipo.',
+      );
+    }
 
     res.json({ token: signToken(user), user: publicUser(user) });
   }),

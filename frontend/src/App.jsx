@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import RutaProtegida from './components/RutaProtegida.jsx';
 import Login from './pages/Login.jsx';
+import LoginEstudiante from './pages/LoginEstudiante.jsx';
 import Inicio from './pages/Inicio.jsx';
 import Curriculo from './pages/Curriculo.jsx';
 import Grupos from './pages/Grupos.jsx';
@@ -17,6 +18,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      {/* Entrada propia para los estudiantes, pensada para que el nino entre solo. */}
+      <Route path="/soy-estudiante" element={<LoginEstudiante />} />
 
       <Route
         element={

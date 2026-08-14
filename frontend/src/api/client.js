@@ -1,11 +1,25 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 const TOKEN_KEY = 'pythonkids.token';
+const PORTAL_KEY = 'pythonkids.portal';
 
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
   set: (token) => localStorage.setItem(TOKEN_KEY, token),
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
+
+/**
+ * Recuerda por que entrada inicio sesion el usuario, para devolverlo ahi al
+ * cerrar sesion o cuando caduque el token. Un nino no deberia acabar en la
+ * pantalla del equipo.
+ */
+export const portalStore = {
+  get: () => localStorage.getItem(PORTAL_KEY) ?? 'equipo',
+  set: (portal) => localStorage.setItem(PORTAL_KEY, portal ?? 'equipo'),
+};
+
+export const rutaDeEntrada = (portal = portalStore.get()) =>
+  portal === 'estudiantes' ? '/soy-estudiante' : '/login';
 
 /** Error de API con el status y los detalles de validacion del backend. */
 export class ApiError extends Error {

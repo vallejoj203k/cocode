@@ -81,6 +81,23 @@ configurar CORS en desarrollo.
 El control se aplica en el backend (middleware `authorize` + filtros por rol en cada
 consulta), no solo en la interfaz: entrar por URL directa a una sección ajena devuelve 403.
 
+### Dos entradas
+
+La plataforma tiene dos pantallas de acceso a la misma cuenta y contraseña:
+
+| Ruta              | Para quién                | Cómo es                                              |
+| ----------------- | ------------------------- | ---------------------------------------------------- |
+| `/login`          | administradores y tutores | Formulario compacto, el de siempre                    |
+| `/soy-estudiante` | estudiantes               | Texto grande, lenguaje sencillo y botón de ver la contraseña, porque la usa el niño (8-10 años) por su cuenta |
+
+Cada pantalla enlaza a la otra, así que nadie queda atrapado en la puerta equivocada.
+
+El reparto **no es cosmético**: el login envía el campo `portal` y el backend rechaza con 403
+a quien no corresponda, de modo que un tutor no llega a entrar por la puerta de los niños y
+no hace falta expulsarlo después de haber iniciado sesión. La app también recuerda por qué
+puerta se entró: al cerrar sesión o al caducar el token, el niño vuelve a `/soy-estudiante` y
+no a la pantalla del equipo.
+
 ---
 
 ## Modelo de datos
@@ -146,7 +163,7 @@ Todas las rutas cuelgan de `/api` y, salvo el login, requieren la cabecera
 ### Autenticación
 | Método | Ruta                        | Quién  | Descripción                          |
 | ------ | --------------------------- | ------ | ------------------------------------ |
-| POST   | `/auth/login`               | todos  | Devuelve el token y el usuario       |
+| POST   | `/auth/login`               | todos  | Devuelve el token y el usuario. Acepta `portal: "equipo" \| "estudiantes"` |
 | GET    | `/auth/me`                  | sesión | Usuario, sus estudiantes o sus grupos|
 | POST   | `/auth/change-password`     | sesión | Cambia la propia contraseña          |
 
