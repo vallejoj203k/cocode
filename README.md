@@ -222,7 +222,8 @@ Guardar asistencia marca la clase como dictada automáticamente.
 | Método | Ruta         | Descripción                                    |
 | ------ | ------------ | ---------------------------------------------- |
 | GET    | `/dashboard` | Resumen adaptado al rol de quien lo consulta   |
-| GET    | `/health`    | Estado del servicio y de la base (sin auth)    |
+| GET    | `/health`    | Liveness: 200 mientras el proceso este vivo (sin auth) |
+| GET    | `/health/ready` | Readiness: 503 si la base no responde (sin auth)   |
 
 ---
 
@@ -272,7 +273,8 @@ firmar tokens con una clave por defecto.
 
 ### 4. Desplegar
 
-Aplica los cambios. En el primer arranque los logs deben mostrar:
+Aplica los cambios. Mira los **Deploy Logs** (no los Build Logs: el build puede pasar y el
+arranque fallar igual). En el primer arranque deben mostrar:
 
 ```
 Applying migration `20260814193606_init`
@@ -291,6 +293,21 @@ Applying migration `20260814210000_add_courses`
    sembrar en cada despliegue es trabajo inútil.
 
 Los despliegues siguientes aplican solas las migraciones nuevas al arrancar.
+
+### Si el healthcheck falla
+
+`Healthcheck failure` / `1/1 replicas never became healthy` significa que el proceso no llegó
+a escuchar: el build salió bien pero el arranque no. Revisa los **Deploy Logs**, donde el
+servidor dice qué le falta. Causas habituales:
+
+| En los logs                                      | Qué pasa                                                    |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `faltan variables de entorno obligatorias`       | Falta `DATABASE_URL` o `JWT_SECRET` (ver la tabla de arriba) |
+| `Can't reach database server`                    | No hay plugin de PostgreSQL, o `DATABASE_URL` no es la referencia `${{Postgres.DATABASE_URL}}` |
+| Nada, el log está vacío                          | El servicio no tiene el repositorio bien enlazado            |
+
+El healthcheck apunta a `/health`, que responde sin tocar la base a propósito: así una base
+lenta en el primer arranque no tumba un despliegue por lo demás correcto.
 
 ### Alternativa: dos servicios
 

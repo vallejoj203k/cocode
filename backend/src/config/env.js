@@ -1,23 +1,56 @@
 import 'dotenv/config';
 
-function required(name, fallback) {
-  const value = process.env[name] ?? fallback;
-  if (value === undefined || value === '') {
-    throw new Error(`Falta la variable de entorno obligatoria: ${name}`);
-  }
-  return value;
-}
-
 const isProd = process.env.NODE_ENV === 'production';
+
+/**
+ * Variables sin las cuales el servidor no puede funcionar. Se revisan todas de
+ * una vez para que un despliegue mal configurado diga en un solo mensaje que
+ * falta, en lugar de fallar de a una con un stack trace.
+ */
+const OBLIGATORIAS = [
+  {
+    nombre: 'DATABASE_URL',
+    siempre: true,
+    ayuda: 'En Railway: añade el plugin PostgreSQL y usa la referencia ${{Postgres.DATABASE_URL}}.',
+  },
+  {
+    nombre: 'JWT_SECRET',
+    siempre: false, // en desarrollo hay un valor por defecto
+    ayuda: 'Genera una clave larga con: openssl rand -base64 48',
+  },
+];
+
+const faltantes = OBLIGATORIAS.filter(
+  (v) => (v.siempre || isProd) && !process.env[v.nombre],
+);
+
+if (faltantes.length > 0) {
+  console.error(
+    [
+      '',
+      '========================================================================',
+      ' El servidor no puede arrancar: faltan variables de entorno obligatorias',
+      '========================================================================',
+      ...faltantes.flatMap((v) => [` · ${v.nombre}`, `     ${v.ayuda}`]),
+      '',
+      ' Documentacion: README.md → Despliegue en Railway',
+      '========================================================================',
+      '',
+    ].join('\n'),
+  );
+  process.exit(1);
+}
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isProd,
   port: Number(process.env.PORT ?? 4000),
-  databaseUrl: required('DATABASE_URL'),
+  // Railway enruta el trafico al contenedor, hay que escuchar en todas las
+  // interfaces y no solo en localhost.
+  host: process.env.HOST ?? '0.0.0.0',
+  databaseUrl: process.env.DATABASE_URL,
   jwt: {
-    // En produccion nunca usamos el secreto por defecto.
-    secret: isProd ? required('JWT_SECRET') : (process.env.JWT_SECRET ?? 'dev-secret-no-usar-en-produccion'),
+    secret: process.env.JWT_SECRET ?? 'dev-secret-no-usar-en-produccion',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   },
   // Lista separada por comas. "*" permite cualquier origen (util en dev).
