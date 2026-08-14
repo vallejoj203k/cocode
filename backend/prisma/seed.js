@@ -5,8 +5,14 @@ import { curriculum } from './curriculum.js';
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL ?? 'admin@pythonkids.com').toLowerCase();
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123*';
+// Se recortan los espacios: al pegar valores en un panel como el de Railway es
+// facil arrastrar un espacio o un salto de linea, y eso rompe el login sin dar
+// ninguna pista.
+const ADMIN_PASSWORD_CRUDO = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123*';
+const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL ?? 'admin@pythonkids.com').trim().toLowerCase();
+const ADMIN_PASSWORD = ADMIN_PASSWORD_CRUDO.trim();
+// Escotilla de emergencia para cuando se pierde el acceso al administrador.
+const RESET_ADMIN = process.env.RESET_ADMIN_PASSWORD === 'true';
 // Los datos de ejemplo se pueden desactivar con SEED_DEMO=false (util en produccion).
 const CON_DEMO = process.env.SEED_DEMO !== 'false';
 
@@ -82,18 +88,40 @@ async function seedCurriculum() {
 }
 
 async function seedAdmin() {
-  const admin = await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: {},
-    create: {
-      nombre: 'Administrador',
-      email: ADMIN_EMAIL,
-      passwordHash: await hash(ADMIN_PASSWORD),
-      rol: 'ADMIN',
-    },
-  });
-  console.log(`  admin: ${admin.email}`);
-  return admin;
+  if (ADMIN_PASSWORD !== ADMIN_PASSWORD_CRUDO) {
+    console.warn('  aviso: SEED_ADMIN_PASSWORD tenia espacios sobrantes; se ignoraron.');
+  }
+
+  const existente = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
+
+  if (!existente) {
+    const admin = await prisma.user.create({
+      data: {
+        nombre: 'Administrador',
+        email: ADMIN_EMAIL,
+        passwordHash: await hash(ADMIN_PASSWORD),
+        rol: 'ADMIN',
+      },
+    });
+    console.log(`  admin CREADO: ${admin.email} (entra con la clave de SEED_ADMIN_PASSWORD)`);
+    return admin;
+  }
+
+  // La cuenta ya existe: no se pisa su contrasena salvo peticion explicita, para
+  // no revertir un cambio hecho desde la plataforma en cada despliegue.
+  if (RESET_ADMIN) {
+    const admin = await prisma.user.update({
+      where: { id: existente.id },
+      data: { passwordHash: await hash(ADMIN_PASSWORD), rol: 'ADMIN', activo: true },
+    });
+    console.log(`  admin RESTABLECIDO: ${admin.email} (nueva clave = SEED_ADMIN_PASSWORD)`);
+    console.log('  recuerda quitar RESET_ADMIN_PASSWORD despues de entrar.');
+    return admin;
+  }
+
+  console.log(`  admin YA EXISTIA: ${existente.email} (su contrasena no se toca)`);
+  console.log('  si no puedes entrar, arranca una vez con RESET_ADMIN_PASSWORD=true.');
+  return existente;
 }
 
 async function crearUsuario({ nombre, email, rol, telefono }) {

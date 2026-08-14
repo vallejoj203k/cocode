@@ -294,6 +294,23 @@ Applying migration `20260814210000_add_courses`
 
 Los despliegues siguientes aplican solas las migraciones nuevas al arrancar.
 
+### Si no puedes entrar: "Email o contraseña incorrectos"
+
+Ese mensaje significa que la base responde y la tabla de usuarios existe, pero la cuenta no
+está o la clave no coincide. Casi siempre es una de estas dos:
+
+- **El seed no llegó a correr.** Solo se ejecuta con `SEED_ON_START=true` en el arranque;
+  definir `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` por su cuenta no crea ninguna cuenta.
+  Mira los Deploy Logs: si dice `SEED_ON_START no esta activo`, ponla en `true` y vuelve a
+  desplegar. Al arrancar debe aparecer `admin CREADO: tu-correo@ejemplo.com`.
+- **La cuenta ya existía con otra contraseña.** El seed nunca pisa la contraseña de un
+  administrador existente, para no revertir en cada despliegue un cambio hecho desde la
+  plataforma. Si el log dice `admin YA EXISTIA`, añade `RESET_ADMIN_PASSWORD=true`, despliega,
+  entra, y **quita esa variable**.
+
+Cuida también los espacios: al pegar valores en el panel es fácil arrastrar un espacio final.
+El seed los recorta y lo avisa en el log, pero el formulario de login no.
+
 ### Si el healthcheck falla
 
 `Healthcheck failure` / `1/1 replicas never became healthy` significa que el proceso no llegó
