@@ -1,0 +1,27 @@
+{
+  "name": "cocode-plataforma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de gestion del curso de Python para ninos (8-10 anos)",
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "db:generate": "npm run prisma:generate -w backend",
+    "db:push": "npm run prisma:push -w backend",
+    "db:migrate": "npm run prisma:migrate -w backend",
+    "db:seed": "npm run seed -w backend",
+    "lint": "echo \"(sin linter configurado)\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

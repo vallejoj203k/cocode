@@ -1,0 +1,340 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useFetch } from '../hooks/useApi.js';
+import { BarraProgreso, Cargando, EncabezadoPagina, EstadoVacio, MensajeError, Tarjeta } from '../components/ui.jsx';
+import { capitalizar, formatoFecha, formatoMoneda, formatoPeriodo } from '../lib/format.js';
+
+/** Grafico de barras ingresos vs gastos, sin dependencias externas. */
+function GraficoBalance({ porMes }) {
+  const maximo = Math.max(1, ...porMes.flatMap((m) => [m.ingresos, m.gastos]));
+
+  return (
+    <div className="card p-5">
+      <h2 className="text-base font-semibold text-slate-900">Ingresos vs gastos</h2>
+      <p className="text-xs text-slate-500">Últimos {porMes.length} meses</p>
+
+      <div className="mt-5 flex items-end gap-4 overflow-x-auto pb-2">
+        {porMes.map((m) => (
+          <div key={m.mes} className="flex min-w-[56px] flex-1 flex-col items-center gap-2">
+            <div className="flex h-36 w-full items-end justify-center gap-1">
+              <div
+                className="w-4 rounded-t bg-emerald-500"
+                style={{ height: `${(m.ingresos / maximo) * 100}%` }}
+                title={`Ingresos: ${formatoMoneda(m.ingresos)}`}
+              />
+              <div
+                className="w-4 rounded-t bg-rose-400"
+                style={{ height: `${(m.gastos / maximo) * 100}%` }}
+                title={`Gastos: ${formatoMoneda(m.gastos)}`}
+              />
+            </div>
+            <span className="text-[11px] font-medium text-slate-500">{m.mes.slice(5)}/{m.mes.slice(2, 4)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex gap-4 text-xs text-slate-600">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Ingresos
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-rose-400" /> Gastos
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function InicioAdmin({ data }) {
+  const { tarjetas, finanzas, grupos } = data;
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="🧒" />
+        <Tarjeta titulo="Grupos activos" valor={tarjetas.gruposActivos} icono="👥" tono="violeta" />
+        <Tarjeta
+          titulo="Currículo"
+          valor={`${tarjetas.modulos} módulos`}
+          detalle={`${tarjetas.totalClases} clases en total`}
+          icono="📚"
+          tono="ambar"
+        />
+        <Tarjeta
+          titulo="Sugerencias nuevas"
+          valor={tarjetas.sugerenciasNuevas}
+          detalle={tarjetas.sugerenciasNuevas ? 'Pendientes de revisar' : 'Todo al día'}
+          icono="💡"
+          tono={tarjetas.sugerenciasNuevas ? 'rojo' : 'verde'}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <GraficoBalance porMes={finanzas.porMes} />
+        </div>
+
+        <div className="card p-5">
+          <h2 className="text-base font-semibold text-slate-900">Mes en curso</h2>
+          <p className="text-xs text-slate-500">{formatoPeriodo(finanzas.mesActual?.mes)}</p>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Ingresos</dt>
+              <dd className="font-semibold text-emerald-600">{formatoMoneda(finanzas.mesActual?.ingresos)}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-500">Gastos</dt>
+              <dd className="font-semibold text-rose-600">{formatoMoneda(finanzas.mesActual?.gastos)}</dd>
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+              <dt className="font-medium text-slate-700">Balance</dt>
+              <dd
+                className={`text-base font-bold ${
+                  (finanzas.mesActual?.balance ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                }`}
+              >
+                {formatoMoneda(finanzas.mesActual?.balance)}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-5 rounded-lg bg-slate-50 p-3 text-sm">
+            <p className="font-medium text-slate-700">Cartera del mes</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {finanzas.cartera.alDia} al día · {finanzas.cartera.parcial} parcial ·{' '}
+              <span className="font-semibold text-rose-600">{finanzas.cartera.pendiente} pendiente</span>
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Por recaudar: <strong>{formatoMoneda(finanzas.cartera.porRecaudar)}</strong>
+            </p>
+            <Link to="/finanzas" className="mt-2 inline-block text-xs font-semibold text-marca-600 hover:underline">
+              Ver módulo financiero →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="card mt-6 overflow-hidden">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-base font-semibold text-slate-900">Avance por grupo</h2>
+        </div>
+        {grupos.length === 0 ? (
+          <div className="p-5">
+            <EstadoVacio
+              titulo="Todavía no hay grupos"
+              descripcion="Crea el primer grupo para empezar a registrar clases y asistencia."
+              icono="👥"
+              accion={
+                <Link to="/grupos" className="btn-primary">
+                  Ir a grupos
+                </Link>
+              }
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Grupo</th>
+                  <th>Tutor</th>
+                  <th>Estudiantes</th>
+                  <th className="w-64">Avance del curso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {grupos.map((g) => (
+                  <tr key={g.id}>
+                    <td>
+                      <Link to={`/grupos/${g.id}`} className="font-semibold text-marca-600 hover:underline">
+                        {g.nombre}
+                      </Link>
+                    </td>
+                    <td className="text-slate-600">{g.tutor}</td>
+                    <td className="text-slate-600">{g.estudiantes}</td>
+                    <td>
+                      <BarraProgreso valor={g.avance} etiqueta={`${g.clasesDictadas} de ${tarjetas.totalClases} clases`} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function InicioTutor({ data }) {
+  const { tarjetas, grupos } = data;
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Tarjeta titulo="Mis grupos" valor={tarjetas.gruposAsignados} icono="👥" />
+        <Tarjeta titulo="Mis estudiantes" valor={tarjetas.estudiantes} icono="🧒" tono="violeta" />
+        <Tarjeta titulo="Clases dictadas" valor={tarjetas.clasesDictadas} icono="✅" tono="verde" />
+        <Tarjeta titulo="Clases del curso" valor={tarjetas.totalClases} icono="📚" tono="ambar" />
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold text-slate-900">Mis grupos</h2>
+      {grupos.length === 0 ? (
+        <div className="mt-3">
+          <EstadoVacio
+            titulo="Aún no tienes grupos asignados"
+            descripcion="Cuando el administrador te asigne un grupo aparecerá aquí."
+            icono="👥"
+          />
+        </div>
+      ) : (
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {grupos.map((g) => (
+            <div key={g.id} className="card p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-slate-900">{g.nombre}</h3>
+                  <p className="text-xs text-slate-500">
+                    {capitalizar(g.diaSemana)} · {g.hora} · {g.estudiantes} estudiantes
+                  </p>
+                </div>
+                <Link to={`/grupos/${g.id}`} className="btn-ghost text-xs">
+                  Abrir
+                </Link>
+              </div>
+
+              <div className="mt-4">
+                <BarraProgreso valor={g.avance} etiqueta={`${g.clasesDictadas} clases dictadas`} />
+              </div>
+
+              <dl className="mt-4 space-y-1 text-xs text-slate-500">
+                <div>
+                  <dt className="inline font-medium text-slate-600">Última clase: </dt>
+                  <dd className="inline">
+                    {g.ultimaClase
+                      ? `M${g.ultimaClase.modulo} · ${g.ultimaClase.nombre} (${formatoFecha(g.ultimaClase.fecha)})`
+                      : 'Sin registro'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-medium text-slate-600">Próxima: </dt>
+                  <dd className="inline">
+                    {g.proximaClase ? `M${g.proximaClase.modulo} · ${g.proximaClase.nombre}` : 'Curso completado 🎉'}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function InicioEstudiante({ data }) {
+  const { estudiantes, totalClases } = data;
+
+  if (estudiantes.length === 0) {
+    return (
+      <EstadoVacio
+        titulo="Todavía no hay estudiantes vinculados a tu cuenta"
+        descripcion="Comunícate con el administrador del curso para que vincule a tu hijo o hija con esta cuenta."
+        icono="🧒"
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {estudiantes.map((e) => (
+        <div key={e.id} className="card p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">{e.nombre}</h2>
+              <p className="text-sm text-slate-500">
+                {e.grupos.length
+                  ? e.grupos
+                      .map((g) => `${g.nombre} · ${capitalizar(g.diaSemana)} ${g.hora} · Tutor: ${g.tutor}`)
+                      .join(' | ')
+                  : 'Sin grupo asignado'}
+              </p>
+            </div>
+            <Link to={`/estudiantes/${e.id}`} className="btn-secondary text-xs">
+              Ver detalle
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg bg-marca-50 p-4">
+              <p className="text-xs font-medium text-marca-700">Avance del curso</p>
+              <p className="mt-1 text-2xl font-bold text-marca-800">{e.avance}%</p>
+              <p className="text-xs text-marca-700/80">
+                {e.clasesVistas} de {totalClases} clases
+              </p>
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-4">
+              <p className="text-xs font-medium text-emerald-700">Asistencia</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-800">
+                {e.asistencia.porcentaje === null ? '—' : `${e.asistencia.porcentaje}%`}
+              </p>
+              <p className="text-xs text-emerald-700/80">
+                {e.asistencia.presentes} de {e.asistencia.registradas} clases
+              </p>
+            </div>
+            <div className="rounded-lg bg-amber-50 p-4">
+              <p className="text-xs font-medium text-amber-700">Última clase vista</p>
+              {e.ultimaClase ? (
+                <>
+                  <p className="mt-1 text-sm font-bold text-amber-900">{e.ultimaClase.nombre}</p>
+                  <p className="text-xs text-amber-800/80">
+                    Módulo {e.ultimaClase.modulo} · {formatoFecha(e.ultimaClase.fecha)}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-amber-800">El curso aún no comienza</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <BarraProgreso valor={e.avance} etiqueta="Progreso general" />
+          </div>
+        </div>
+      ))}
+
+      <div className="rounded-xl bg-marca-500 p-6 text-white">
+        <h3 className="text-base font-semibold">¿Tienes una idea para mejorar el curso?</h3>
+        <p className="mt-1 text-sm text-marca-50">Cuéntanos por el buzón de sugerencias, leemos todos los mensajes.</p>
+        <Link to="/sugerencias" className="btn mt-4 bg-white text-marca-700 hover:bg-marca-50">
+          Escribir una sugerencia
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function Inicio() {
+  const { user } = useAuth();
+  const { data, cargando, error, recargar } = useFetch('/dashboard');
+
+  if (cargando) return <Cargando />;
+  if (error) return <MensajeError error={error} onReintentar={recargar} />;
+
+  return (
+    <>
+      <EncabezadoPagina
+        titulo={`Hola, ${user.nombre.split(' ')[0]} 👋`}
+        descripcion={
+          user.rol === 'ADMIN'
+            ? 'Resumen general del curso y del negocio.'
+            : user.rol === 'TUTOR'
+              ? 'Este es el estado de tus grupos.'
+              : 'Así va el curso de tus estudiantes.'
+        }
+      />
+      {user.rol === 'ADMIN' && <InicioAdmin data={data} />}
+      {user.rol === 'TUTOR' && <InicioTutor data={data} />}
+      {user.rol === 'ESTUDIANTE' && <InicioEstudiante data={data} />}
+    </>
+  );
+}
