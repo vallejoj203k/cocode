@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Campo, MensajeError, Spinner } from '../components/ui.jsx';
 
@@ -21,7 +21,7 @@ export default function Login() {
     setEnviando(true);
     setError(null);
     try {
-      await iniciarSesion(email.trim(), password);
+      await iniciarSesion(email.trim(), password, 'equipo');
       navigate(location.state?.from?.pathname ?? '/', { replace: true });
     } catch (err) {
       setError(err);
@@ -38,7 +38,7 @@ export default function Login() {
             🐍
           </p>
           <h1 className="mt-3 text-2xl font-bold text-slate-900">Python Kids</h1>
-          <p className="text-sm text-slate-500">Plataforma del curso de Python para niños</p>
+          <p className="text-sm text-slate-500">Entrada del equipo · administradores y tutores</p>
         </div>
 
         <form onSubmit={enviar} className="card space-y-4 p-6">
@@ -76,6 +76,13 @@ export default function Login() {
             ¿Problemas para entrar? Escribe al administrador del curso.
           </p>
         </form>
+
+        <p className="mt-6 text-center text-sm text-slate-500">
+          ¿Eres estudiante?{' '}
+          <Link to="/soy-estudiante" className="font-semibold text-marca-600 underline">
+            Entra por aquí
+          </Link>
+        </p>
       </div>
     </div>
   );

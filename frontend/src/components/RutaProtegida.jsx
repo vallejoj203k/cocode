@@ -7,11 +7,11 @@ import { Cargando } from './ui.jsx';
  * origen para volver a ella despues del login.
  */
 export default function RutaProtegida({ roles, children }) {
-  const { user, cargando } = useAuth();
+  const { user, cargando, rutaDeEntrada } = useAuth();
   const location = useLocation();
 
   if (cargando) return <Cargando texto="Verificando sesión..." />;
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user) return <Navigate to={rutaDeEntrada} state={{ from: location }} replace />;
 
   if (roles && !roles.includes(user.rol)) {
     return (

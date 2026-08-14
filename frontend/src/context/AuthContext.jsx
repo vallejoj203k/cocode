@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api, subscribeUnauthorized, tokenStore } from '../api/client.js';
+import { api, portalStore, rutaDeEntrada, subscribeUnauthorized, tokenStore } from '../api/client.js';
 
 const AuthContext = createContext(null);
 
@@ -38,9 +38,14 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const iniciarSesion = useCallback(async (email, password) => {
-    const data = await api.post('/auth/login', { email, password });
+  /**
+   * `portal` indica por que entrada se inicia sesion ('equipo' o 'estudiantes').
+   * El backend rechaza la combinacion que no corresponde al rol.
+   */
+  const iniciarSesion = useCallback(async (email, password, portal) => {
+    const data = await api.post('/auth/login', { email, password, portal });
     tokenStore.set(data.token);
+    portalStore.set(portal);
     setUser(data.user);
     return data.user;
   }, []);
@@ -51,6 +56,8 @@ export function AuthProvider({ children }) {
       cargando,
       iniciarSesion,
       cerrarSesion,
+      // Puerta por la que entro, para volver a ella al salir.
+      rutaDeEntrada: rutaDeEntrada(),
       esAdmin: user?.rol === 'ADMIN',
       esTutor: user?.rol === 'TUTOR',
       esEstudiante: user?.rol === 'ESTUDIANTE',
