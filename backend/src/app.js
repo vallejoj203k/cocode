@@ -28,11 +28,20 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
   if (!env.isProd) app.use(morgan('dev'));
 
-  app.get('/health', async (_req, res) => {
+  // Liveness: responde 200 mientras el proceso este en pie. Es el que usa el
+  // healthcheck del despliegue, asi que no depende de la base: una base lenta o
+  // caida no debe tumbar un despliegue por lo demas correcto.
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+  });
+
+  // Readiness: comprueba de verdad la conexion a la base.
+  app.get('/health/ready', async (_req, res) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
       res.json({ status: 'ok', db: 'ok', uptime: process.uptime() });
-    } catch {
+    } catch (error) {
+      console.error('[health] la base de datos no responde:', error.message);
       res.status(503).json({ status: 'degraded', db: 'error' });
     }
   });

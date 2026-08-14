@@ -4,8 +4,13 @@ import { prisma } from './lib/prisma.js';
 
 const app = createApp();
 
-const server = app.listen(env.port, () => {
-  console.log(`[api] escuchando en http://localhost:${env.port} (${env.nodeEnv})`);
+const server = app.listen(env.port, env.host, () => {
+  console.log(`[api] escuchando en ${env.host}:${env.port} (${env.nodeEnv})`);
+});
+
+server.on('error', (error) => {
+  console.error('[api] no se pudo abrir el puerto:', error.message);
+  process.exit(1);
 });
 
 async function shutdown(signal) {
