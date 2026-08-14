@@ -228,39 +228,75 @@ Guardar asistencia marca la clase como dictada automáticamente.
 
 ## Despliegue en Railway
 
-El backend sirve el build del frontend cuando existe `frontend/dist`, así que basta **un
-solo servicio web** más el plugin de Postgres. Es la opción recomendada: sin CORS y con una
-sola URL.
+El backend sirve el build del frontend cuando existe `frontend/dist`, así que el proyecto se
+despliega con **un solo servicio web + el plugin de PostgreSQL**. Es la opción recomendada:
+una sola URL, sin CORS y sin variables cruzadas entre servicios.
 
-1. **Crea el proyecto** en Railway y añade el plugin **PostgreSQL**.
-2. **Añade el servicio** desde este repositorio. `railway.json` ya define:
-   - build: `npm run build` (compila el frontend; `prisma generate` corre en el postinstall)
-   - start: `npm start` → `prisma migrate deploy` y luego el servidor
-   - healthcheck: `/health`
-3. **Configura las variables** del servicio:
+> No crees un servicio aparte para el frontend. Los dos leerían el mismo `railway.json` de la
+> raíz y ambos acabarían ejecutando el backend.
 
-   | Variable            | Valor                            |
-   | ------------------- | -------------------------------- |
-   | `DATABASE_URL`      | `${{Postgres.DATABASE_URL}}`     |
-   | `JWT_SECRET`        | `openssl rand -base64 48`        |
-   | `NODE_ENV`          | `production`                     |
-   | `CORS_ORIGINS`      | `*`                              |
-   | `VALOR_MENSUALIDAD` | valor de la mensualidad          |
-   | `SEED_DEMO`         | `false`                          |
-   | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | credenciales del primer admin |
+### 1. Base de datos
 
-   `PORT` lo inyecta Railway.
-4. **Siembra el currículo** una sola vez, desde la consola del servicio:
-   ```bash
-   npm run db:seed
-   ```
-5. Genera el dominio público y entra con la cuenta de administrador.
+En el proyecto, **+ New → Database → PostgreSQL**. Sin esto el servicio no arranca:
+`DATABASE_URL` es obligatoria y el backend falla al iniciar.
 
-### Alternativa: frontend y backend separados
+### 2. Servicio web
 
-Si prefieres dos servicios, despliega el frontend con `npm run build -w frontend` sirviendo
-`frontend/dist` como estático, define `VITE_API_URL` con la URL pública del backend y pon en
-`CORS_ORIGINS` el dominio del frontend.
+**+ New → GitHub Repo** y elige este repositorio.
+
+- **Root Directory**: déjalo vacío (la raíz del repo). Es un monorepo con workspaces de npm;
+  si apuntas a `backend/` el build no encuentra el `package.json` raíz y falla.
+- Build y start salen de `railway.json`, no hay que escribirlos a mano:
+  - build: `npm run build` — compila el frontend (`prisma generate` corre en el postinstall)
+  - start: `npm start` — aplica migraciones, siembra si toca y levanta el servidor
+  - healthcheck: `/health`
+
+### 3. Variables del servicio
+
+| Variable              | Valor                                        |
+| --------------------- | -------------------------------------------- |
+| `DATABASE_URL`        | `${{Postgres.DATABASE_URL}}` (referencia)     |
+| `JWT_SECRET`          | una clave larga: `openssl rand -base64 48`    |
+| `NODE_ENV`            | `production`                                  |
+| `CORS_ORIGINS`        | `*`                                           |
+| `VALOR_MENSUALIDAD`   | el valor de la mensualidad, ej. `120000`      |
+| `SEED_ON_START`       | `true` **solo para el primer despliegue**     |
+| `SEED_DEMO`           | `false`                                       |
+| `SEED_ADMIN_EMAIL`    | tu correo de administrador                    |
+| `SEED_ADMIN_PASSWORD` | una contraseña que cambiarás al entrar        |
+
+`PORT` lo inyecta Railway solo; no la definas.
+
+`JWT_SECRET` es obligatoria en producción: si falta, el servidor se niega a arrancar en vez de
+firmar tokens con una clave por defecto.
+
+### 4. Desplegar
+
+Aplica los cambios. En el primer arranque los logs deben mostrar:
+
+```
+Applying migration `20260814193606_init`
+Applying migration `20260814210000_add_courses`
+[bootstrap] SEED_ON_START=true, sembrando la base de datos...
+  curso "Python para ninos": 11 modulos, 44 clases
+  admin: tu-correo@ejemplo.com
+[api] escuchando en http://localhost:8080 (production)
+```
+
+### 5. Después del primer arranque
+
+1. Genera el dominio público (**Settings → Networking → Generate Domain**).
+2. Entra con las credenciales de `SEED_ADMIN_*` y cámbialas en **Mi cuenta**.
+3. Pon `SEED_ON_START=false`. El seed es idempotente y no rompe nada si se repite, pero
+   sembrar en cada despliegue es trabajo inútil.
+
+Los despliegues siguientes aplican solas las migraciones nuevas al arrancar.
+
+### Alternativa: dos servicios
+
+Si prefieres separar frontend y backend, el frontend necesita build `npm run build -w frontend`
+sirviendo `frontend/dist`, la variable `VITE_API_URL` con la URL pública del backend, y
+`CORS_ORIGINS` en el backend con el dominio del frontend.
 
 ---
 
@@ -274,6 +310,7 @@ Si prefieres dos servicios, despliega el frontend con `npm run build -w frontend
 | `npm run db:migrate`  | Crea y aplica una migración (desarrollo)             |
 | `npm run db:push`     | Sincroniza el esquema sin migración (prototipado)    |
 | `npm run db:seed`     | Siembra currículo, admin y datos de ejemplo          |
+| `SEED_ON_START=true`  | Variable que hace que el arranque siembre la base    |
 | `npm run db:generate` | Regenera el cliente de Prisma                        |
 
 ---
