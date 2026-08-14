@@ -523,9 +523,21 @@ export default function GrupoDetalle() {
           grupo.tutor?.nombre ?? 'sin asignar'
         } · ${grupo.resumen.estudiantesActivos} estudiantes`}
         acciones={
-          <Link to="/grupos" className="btn-secondary">
-            ← Volver
-          </Link>
+          <>
+            {grupo.enlaceReunion && (
+              <a
+                href={grupo.enlaceReunion}
+                target="_blank"
+                rel="noreferrer"
+                className="btn bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                🎥 Entrar a la clase
+              </a>
+            )}
+            <Link to="/grupos" className="btn-secondary">
+              ← Volver
+            </Link>
+          </>
         }
       />
 

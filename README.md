@@ -81,6 +81,19 @@ configurar CORS en desarrollo.
 El control se aplica en el backend (middleware `authorize` + filtros por rol en cada
 consulta), no solo en la interfaz: entrar por URL directa a una sección ajena devuelve 403.
 
+### La clase online
+
+Las clases se dictan por videollamada, y la plataforma guarda el enlace para que nadie tenga
+que reenviarlo cada semana:
+
+- El admin pone el **enlace de la clase virtual** al crear o editar el grupo (una sala fija de
+  Meet o Zoom, la misma todas las semanas).
+- El estudiante ve un botón grande **"🎥 Entrar a mi clase"** en su panel, junto al avance de
+  ese curso. Si aún no hay enlace, se le explica en vez de dejar un hueco.
+- El tutor tiene el mismo botón en su panel y en el detalle del grupo.
+
+El enlace se valida como URL en el formulario y también en el servidor.
+
 ### Dos entradas
 
 La plataforma tiene dos pantallas de acceso a la misma cuenta y contraseña:

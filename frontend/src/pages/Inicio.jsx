@@ -213,9 +213,21 @@ function InicioTutor({ data }) {
                     <Badge tono="azul">{g.curso}</Badge>
                   </p>
                 </div>
-                <Link to={`/grupos/${g.id}`} className="btn-ghost text-xs">
-                  Abrir
-                </Link>
+                <div className="flex flex-col items-end gap-1">
+                  {g.enlaceReunion && (
+                    <a
+                      href={g.enlaceReunion}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700"
+                    >
+                      🎥 Entrar a la clase
+                    </a>
+                  )}
+                  <Link to={`/grupos/${g.id}`} className="btn-ghost text-xs">
+                    Abrir
+                  </Link>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -302,6 +314,23 @@ function InicioEstudiante({ data }) {
                       {c.clasesVistas} de {c.totalClases} clases
                     </Badge>
                   </div>
+
+                  {/* La clase es online: el nino entra desde aqui, sin depender
+                      de que alguien le reenvie el enlace cada semana. */}
+                  {c.enlaceReunion ? (
+                    <a
+                      href={c.enlaceReunion}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn mt-3 h-12 w-full bg-emerald-600 text-base text-white hover:bg-emerald-700"
+                    >
+                      🎥 Entrar a mi clase
+                    </a>
+                  ) : (
+                    <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+                      Tu tutor todavía no ha publicado el enlace de la videollamada.
+                    </p>
+                  )}
 
                   <div className="mt-3">
                     <BarraProgreso valor={c.avance} etiqueta="Avance" />

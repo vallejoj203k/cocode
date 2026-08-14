@@ -24,6 +24,12 @@ const groupSchema = z.object({
   fechaInicio: z.coerce.date(),
   tutorId: z.string().optional().nullable(),
   cupoMaximo: z.coerce.number().int().positive().optional().nullable(),
+  enlaceReunion: z
+    .string()
+    .url('El enlace de la clase debe ser una URL valida (empieza por https://)')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   notas: z.string().optional().nullable(),
   activo: z.boolean().optional(),
 });
@@ -168,7 +174,9 @@ router.post(
   authorize('ADMIN'),
   validate(groupSchema),
   asyncHandler(async (req, res) => {
-    const group = await prisma.group.create({ data: req.body });
+    const data = { ...req.body };
+    if (data.enlaceReunion === '') data.enlaceReunion = null;
+    const group = await prisma.group.create({ data });
     res.status(201).json(toJSON(group));
   }),
 );
@@ -178,7 +186,9 @@ router.patch(
   authorize('ADMIN'),
   validate(groupSchema.partial()),
   asyncHandler(async (req, res) => {
-    const group = await prisma.group.update({ where: { id: req.params.id }, data: req.body });
+    const data = { ...req.body };
+    if (data.enlaceReunion === '') data.enlaceReunion = null;
+    const group = await prisma.group.update({ where: { id: req.params.id }, data });
     res.json(toJSON(group));
   }),
 );
