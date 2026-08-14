@@ -1,0 +1,310 @@
+// Plataforma Curso de Python para Ninos (8-10 anos)
+// Base de datos: PostgreSQL — ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  TUTOR
+  ESTUDIANTE // cuenta de acceso operada por el estudiante o su acudiente
+}
+
+enum ClassStatus {
+  PENDIENTE
+  DICTADA
+  CANCELADA
+}
+
+enum EnrollmentStatus {
+  ACTIVO
+  RETIRADO
+}
+
+enum SuggestionStatus {
+  NUEVA
+  LEIDA
+  ATENDIDA
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  NEQUI
+  DAVIPLATA
+  OTRO
+}
+
+enum ExpenseCategory {
+  PLATAFORMA
+  MATERIALES
+  PAGO_TUTORES
+  MARKETING
+  ADMINISTRATIVO
+  OTRO
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y personas
+// ---------------------------------------------------------------------------
+
+/// Cuenta de acceso al sistema. Un ESTUDIANTE aqui representa la cuenta de la
+/// familia: dado que los ninos tienen 8-10 anos, normalmente la opera el
+/// acudiente. Por eso la persona que toma el curso vive en el modelo `Student`
+/// y una misma cuenta puede tener varios hijos vinculados (hermanos).
+model User {
+  id           String   @id @default(cuid())
+  nombre       String
+  email        String   @unique
+  passwordHash String
+  rol          Role     @default(ESTUDIANTE)
+  telefono     String?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  gruposComoTutor    Group[]      @relation("GroupTutor")
+  estudiantes        Student[]    @relation("StudentAccount")
+  sugerencias        Suggestion[] @relation("SuggestionAuthor")
+  sugerenciasAtendidas Suggestion[] @relation("SuggestionHandler")
+  pagosRegistrados   Payment[]    @relation("PaymentRecorder")
+  gastosRegistrados  Expense[]    @relation("ExpenseRecorder")
+
+  @@index([rol])
+  @@map("users")
+}
+
+/// El nino que toma el curso. Se separa de `User` para permitir que un mismo
+/// acudiente administre varios estudiantes con una sola cuenta.
+model Student {
+  id                String    @id @default(cuid())
+  nombre            String
+  apellido          String?
+  fechaNacimiento   DateTime?
+  acudienteNombre   String?
+  acudienteTelefono String?
+  acudienteEmail    String?
+  notas             String?
+  activo            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  /// Cuenta con la que el estudiante/acudiente entra a la plataforma.
+  userId String?
+  user   User?   @relation("StudentAccount", fields: [userId], references: [id], onDelete: SetNull)
+
+  inscripciones StudentGroup[]
+  asistencias   Attendance[]
+  pagos         Payment[]
+
+  @@index([userId])
+  @@index([activo])
+  @@map("students")
+}
+
+// ---------------------------------------------------------------------------
+// Grupos / cohortes
+// ---------------------------------------------------------------------------
+
+model Group {
+  id          String   @id @default(cuid())
+  nombre      String
+  diaSemana   String // LUNES, MARTES, ...
+  hora        String // "16:00"
+  fechaInicio DateTime
+  cupoMaximo  Int?
+  notas       String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tutorId String?
+  tutor   User?   @relation("GroupTutor", fields: [tutorId], references: [id], onDelete: SetNull)
+
+  inscripciones StudentGroup[]
+  progreso      GroupProgress[]
+
+  @@index([tutorId])
+  @@map("groups")
+}
+
+model StudentGroup {
+  id           String           @id @default(cuid())
+  fechaIngreso DateTime         @default(now())
+  estado       EnrollmentStatus @default(ACTIVO)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, groupId])
+  @@index([groupId])
+  @@map("student_groups")
+}
+
+// ---------------------------------------------------------------------------
+// Curriculo
+// ---------------------------------------------------------------------------
+
+model Module {
+  id          String   @id @default(cuid())
+  numero      Int      @unique
+  nombre      String
+  objetivo    String
+  descripcion String?
+  orden       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // El curso define 4 clases por modulo, pero el modelo no lo fuerza para
+  // poder flexibilizarlo a futuro.
+  clases Class[]
+
+  @@index([orden])
+  @@map("modules")
+}
+
+model Class {
+  id              String   @id @default(cuid())
+  numeroClase     Int
+  nombre          String
+  objetivo        String
+  contenido       String
+  conceptosClave  String[] @default([])
+  duracionMinutos Int      @default(60)
+  recursosUrl     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  progreso GroupProgress[]
+
+  @@unique([moduleId, numeroClase])
+  @@index([moduleId])
+  @@map("classes")
+}
+
+// ---------------------------------------------------------------------------
+// Avance y asistencia
+// ---------------------------------------------------------------------------
+
+model GroupProgress {
+  id            String      @id @default(cuid())
+  estado        ClassStatus @default(PENDIENTE)
+  fechaDictada  DateTime?
+  notas         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  classId String
+  clase   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  asistencias Attendance[]
+
+  @@unique([groupId, classId])
+  @@index([groupId])
+  @@map("group_progress")
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  asistio   Boolean  @default(false)
+  nota      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groupProgressId String
+  groupProgress   GroupProgress @relation(fields: [groupProgressId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([groupProgressId, studentId])
+  @@index([studentId])
+  @@map("attendance")
+}
+
+// ---------------------------------------------------------------------------
+// Buzon de sugerencias
+// ---------------------------------------------------------------------------
+
+model Suggestion {
+  id           String           @id @default(cuid())
+  mensaje      String
+  estado       SuggestionStatus @default(NUEVA)
+  respuesta    String?
+  createdAt    DateTime         @default(now())
+  respondidaEn DateTime?
+
+  userId String?
+  autor  User?   @relation("SuggestionAuthor", fields: [userId], references: [id], onDelete: SetNull)
+
+  respondidaPorId String?
+  respondidaPor   User?   @relation("SuggestionHandler", fields: [respondidaPorId], references: [id], onDelete: SetNull)
+
+  @@index([estado])
+  @@index([userId])
+  @@map("suggestions")
+}
+
+// ---------------------------------------------------------------------------
+// Modulo financiero (solo ADMIN)
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id              String        @id @default(cuid())
+  monto           Decimal       @db.Decimal(12, 2)
+  fecha           DateTime
+  metodoPago      PaymentMethod @default(TRANSFERENCIA)
+  /// Periodo que cubre el pago, formato "YYYY-MM".
+  periodoCubierto String
+  concepto        String?
+  nota            String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  registradoPorId String?
+  registradoPor   User?   @relation("PaymentRecorder", fields: [registradoPorId], references: [id], onDelete: SetNull)
+
+  // Sin unique en (studentId, periodoCubierto): un periodo puede cubrirse con
+  // varios abonos. El estado de cartera suma los pagos del periodo.
+  @@index([studentId, periodoCubierto])
+  @@index([fecha])
+  @@map("payments")
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  categoria   ExpenseCategory @default(OTRO)
+  descripcion String
+  monto       Decimal         @db.Decimal(12, 2)
+  fecha       DateTime
+  proveedor   String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  registradoPorId String?
+  registradoPor   User?   @relation("ExpenseRecorder", fields: [registradoPorId], references: [id], onDelete: SetNull)
+
+  @@index([fecha])
+  @@index([categoria])
+  @@map("expenses")
+}
