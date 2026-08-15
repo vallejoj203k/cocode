@@ -186,8 +186,12 @@ Los cursos se guardan en el **niño** (`Student`), pero se ven entrando con la *
 Si los dos existen pero no están enlazados, todo parece correcto desde Estudiantes y la familia no
 ve nada al entrar. Para que no pase desapercibido:
 
-- En **Estudiantes**, un niño sin cuenta sale marcado en ámbar como **"Sin cuenta"**, y el
-  formulario avisa mientras no se elija una.
+- La pantalla de **Inicio** del admin abre con un bloque **"Cosas por revisar"** que cuenta los
+  niños sin cuenta, las cuentas sin niño y los niños sin curso, con un botón a la pantalla donde
+  se arregla cada uno. Si no hay nada pendiente, el bloque no aparece.
+- En **Estudiantes**, un niño sin cuenta sale marcado en ámbar como **"Sin cuenta · vincular"**;
+  el botón abre su ficha para elegir la cuenta sin salir de la lista. El formulario avisa
+  mientras no se elija una.
 - En **Usuarios**, una cuenta sin niño sale marcada como **"Sin estudiante"**.
 - Al editar una cuenta sin niño se ofrece **vincular un niño ya registrado** (opción por defecto
   si hay alguno suelto, porque conserva sus cursos, grupos y asistencia) o crear uno nuevo.

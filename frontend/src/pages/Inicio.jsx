@@ -60,11 +60,66 @@ function GraficoBalance({ porMes }) {
   );
 }
 
+/**
+ * Avisos de cosas a medio hacer. No son errores (la plataforma funciona), pero
+ * dejan a una familia entrando a una pantalla vacia sin que nada lo delate.
+ */
+function AvisosRevision({ revision }) {
+  if (!revision) return null;
+
+  const pendientes = [
+    revision.ninosSinCuenta && {
+      texto:
+        revision.ninosSinCuenta === 1
+          ? '1 niño no tiene cuenta de acceso: nadie puede entrar a ver sus cursos.'
+          : `${revision.ninosSinCuenta} niños no tienen cuenta de acceso: nadie puede entrar a ver sus cursos.`,
+      enlace: '/estudiantes',
+      accion: 'Vincular cuenta',
+    },
+    revision.cuentasSinNino && {
+      texto:
+        revision.cuentasSinNino === 1
+          ? '1 cuenta de estudiante no tiene ningún niño vinculado: al entrar no ve nada.'
+          : `${revision.cuentasSinNino} cuentas de estudiante no tienen niño vinculado: al entrar no ven nada.`,
+      enlace: '/usuarios',
+      accion: 'Vincular niño',
+    },
+    revision.ninosSinCurso && {
+      texto:
+        revision.ninosSinCurso === 1
+          ? '1 niño no tiene ningún curso habilitado ni grupo.'
+          : `${revision.ninosSinCurso} niños no tienen ningún curso habilitado ni grupo.`,
+      enlace: '/estudiantes',
+      accion: 'Habilitar curso',
+    },
+  ].filter(Boolean);
+
+  if (pendientes.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <h2 className="text-sm font-semibold text-amber-900">Cosas por revisar</h2>
+      <ul className="mt-2 space-y-2">
+        {pendientes.map((p) => (
+          <li key={p.texto} className="flex flex-wrap items-center gap-2 text-sm text-amber-800">
+            <span className="flex-1">{p.texto}</span>
+            <Link to={p.enlace} className="btn bg-white text-xs text-amber-900 hover:bg-amber-100">
+              {p.accion}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function InicioAdmin({ data }) {
   const { tarjetas, finanzas, grupos } = data;
 
   return (
     <>
+      <AvisosRevision revision={data.revision} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="🧒" />
         <Tarjeta titulo="Grupos activos" valor={tarjetas.gruposActivos} icono="👥" tono="violeta" />

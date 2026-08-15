@@ -49,6 +49,21 @@ async function dashboardAdmin() {
       estadoCartera(periodoActual()),
     ]);
 
+  // Estados a medio hacer que no dan error por ningun lado pero dejan a una
+  // familia sin ver nada. Son la causa mas comun de "asigne el curso y no
+  // aparece", asi que se cuentan y se avisan en la primera pantalla.
+  const [ninosSinCuenta, cuentasSinNino, ninosSinCurso] = await Promise.all([
+    prisma.student.count({ where: { activo: true, userId: null } }),
+    prisma.user.count({ where: { rol: 'ESTUDIANTE', activo: true, estudiantes: { none: {} } } }),
+    prisma.student.count({
+      where: {
+        activo: true,
+        accesos: { none: {} },
+        inscripciones: { none: { estado: 'ACTIVO' } },
+      },
+    }),
+  ]);
+
   const dictadasPorGrupo = await prisma.groupProgress.groupBy({
     by: ['groupId'],
     where: { estado: 'DICTADA', groupId: { in: grupos.map((g) => g.id) } },
@@ -77,6 +92,7 @@ async function dashboardAdmin() {
       totalClases: detalleCursos.reduce((acc, c) => acc + c.totalClases, 0),
       sugerenciasNuevas,
     },
+    revision: { ninosSinCuenta, cuentasSinNino, ninosSinCurso },
     cursos: detalleCursos,
     finanzas: {
       mesActual: resumen.porMes.at(-1) ?? null,
