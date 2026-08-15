@@ -407,6 +407,26 @@ está o la clave no coincide. Casi siempre es una de estas dos:
 Cuida también los espacios: al pegar valores en el panel es fácil arrastrar un espacio final.
 El seed los recorta y lo avisa en el log, pero el formulario de login no.
 
+### Saber qué versión está desplegada
+
+`GET /api` y `GET /health` devuelven el commit que está corriendo:
+
+```json
+{ "despliegue": { "commit": "a687fa9", "rama": "main" } }
+```
+
+Si ese commit no coincide con el último de `main`, el despliegue no llegó a correr. Revisa en
+Railway:
+
+1. **Deployments**: ¿hay un despliegue para ese commit? Si el último es anterior, el
+   auto-deploy no se disparó.
+2. **Settings → Source**: ¿qué rama observa el servicio? Si no es `main`, los merges a `main`
+   no lo despiertan.
+3. Si el auto-deploy está apagado, usa **Deploy** para lanzarlo a mano.
+
+Con el commit correcto pero la interfaz vieja, es caché del navegador: recarga forzada
+(Ctrl+Shift+R).
+
 ### Si el healthcheck falla
 
 `Healthcheck failure` / `1/1 replicas never became healthy` significa que el proceso no llegó
