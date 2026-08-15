@@ -180,6 +180,21 @@ Al crear una cuenta con rol Estudiante, el formulario pide en el mismo paso el n
 al menos un curso; sin curso no deja guardar. Después se añaden o quitan desde **Usuarios →
 Editar** (cursos de cada hijo) o desde **Estudiantes → Editar**.
 
+#### El niño y la cuenta son dos registros, y hay que unirlos
+
+Los cursos se guardan en el **niño** (`Student`), pero se ven entrando con la **cuenta** (`User`).
+Si los dos existen pero no están enlazados, todo parece correcto desde Estudiantes y la familia no
+ve nada al entrar. Para que no pase desapercibido:
+
+- En **Estudiantes**, un niño sin cuenta sale marcado en ámbar como **"Sin cuenta"**, y el
+  formulario avisa mientras no se elija una.
+- En **Usuarios**, una cuenta sin niño sale marcada como **"Sin estudiante"**.
+- Al editar una cuenta sin niño se ofrece **vincular un niño ya registrado** (opción por defecto
+  si hay alguno suelto, porque conserva sus cursos, grupos y asistencia) o crear uno nuevo.
+
+Crear el usuario desde **Usuarios → + Nuevo usuario** con rol Estudiante evita el problema de
+raíz: pide el nombre del niño y su curso en el mismo paso, y los deja enlazados.
+
 #### Habilitar un curso y asignar un grupo son dos cosas distintas
 
 - **Habilitar el curso** le da al niño el material: aparece en su Currículo y puede leer el plan

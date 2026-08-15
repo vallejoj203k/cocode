@@ -30,11 +30,23 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
   // Alta: datos del nino y su curso, en el mismo paso que la cuenta.
   const [nuevoEstudiante, setNuevoEstudiante] = useState({ nombre: '', apellido: '', courseIds: [] });
 
+  // Una cuenta huerfana se puede arreglar de dos maneras, y crear un nino nuevo
+  // cuando el nino ya existe lo duplica: por eso se ofrece vincular primero.
+  const [modoHijo, setModoHijo] = useState('vincular');
+  const [hijoExistenteId, setHijoExistenteId] = useState('');
+
   // Edicion: cursos de cada hijo ya vinculado a la cuenta.
   const { data: detalle } = useFetch(`/users/${valorInicial?.id}`, undefined, { skip: !editando });
   const [cursosPorHijo, setCursosPorHijo] = useState(null);
 
   const hijos = detalle?.estudiantes ?? [];
+
+  // Ninos ya registrados que no tienen cuenta: nadie puede entrar a ver sus
+  // cursos hasta que se vinculen a una.
+  const { data: paginaSueltos } = useFetch('/students', { sinCuenta: 'true', limit: '100' }, {
+    skip: !editando || valorInicial?.rol !== 'ESTUDIANTE',
+  });
+  const sueltos = (paginaSueltos?.items ?? []).filter((s) => s.activo);
   const seleccionHijos =
     cursosPorHijo ??
     Object.fromEntries(hijos.map((h) => [h.id, h.accesos.map((a) => a.courseId)]));
@@ -43,6 +55,8 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
   const [enviando, setEnviando] = useState(false);
 
   const esEstudiante = form.rol === 'ESTUDIANTE';
+  // Se esta usando la via de "vincular" y no la de "crear".
+  const vinculando = sueltos.length > 0 && modoHijo === 'vincular';
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -61,7 +75,11 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
       if (editando) {
         await api.patch(`/users/${valorInicial.id}`, cuerpo);
 
-        if (esEstudiante && hijos.length === 0 && nuevoEstudiante.nombre) {
+        if (esEstudiante && hijos.length === 0 && modoHijo === 'vincular' && hijoExistenteId) {
+          // El nino ya existe: solo le faltaba la cuenta. No se tocan sus cursos,
+          // que ya estaban bien; lo unico que fallaba era que nadie podia verlos.
+          await api.patch(`/students/${hijoExistenteId}`, { userId: valorInicial.id });
+        } else if (esEstudiante && hijos.length === 0 && nuevoEstudiante.nombre) {
           // La cuenta estaba huerfana: se crea el nino sin salir de aqui.
           await api.post('/students', {
             nombre: nuevoEstudiante.nombre,
@@ -206,10 +224,69 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
               <>
                 <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                   Esta cuenta no tiene ningún estudiante vinculado, así que al entrar no ve nada.
-                  Crea aquí al niño para dejarla lista.
+                  {sueltos.length > 0
+                    ? ' Vincúlala con un niño que ya esté registrado, o crea uno nuevo.'
+                    : ' Crea aquí al niño para dejarla lista.'}
                 </p>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                {sueltos.length > 0 && (
+                  <div className="mb-4 space-y-3">
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={modoHijo === 'vincular'}
+                        onChange={() => setModoHijo('vincular')}
+                      />
+                      <span>
+                        <span className="font-medium text-slate-800">Vincular un niño ya registrado</span>
+                        <span className="block text-xs text-slate-500">
+                          Conserva sus cursos, grupos y asistencia. Es lo que quieres si el niño ya
+                          aparece en Estudiantes.
+                        </span>
+                      </span>
+                    </label>
+
+                    {modoHijo === 'vincular' && (
+                      <div className="pl-6">
+                        <Campo
+                          etiqueta="Niño sin cuenta de acceso"
+                          ayuda="Solo aparecen los que todavía no están vinculados a ninguna cuenta."
+                        >
+                          <select
+                            className="input"
+                            value={hijoExistenteId}
+                            onChange={(e) => setHijoExistenteId(e.target.value)}
+                          >
+                            <option value="">Elige un niño…</option>
+                            {sueltos.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {[s.nombre, s.apellido].filter(Boolean).join(' ')}
+                                {s.acudienteNombre ? ` — acudiente: ${s.acudienteNombre}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </Campo>
+                      </div>
+                    )}
+
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        checked={modoHijo === 'crear'}
+                        onChange={() => setModoHijo('crear')}
+                      />
+                      <span className="font-medium text-slate-800">Crear un niño nuevo</span>
+                    </label>
+                  </div>
+                )}
+
+                <div
+                  className={`grid gap-4 sm:grid-cols-2 ${
+                    sueltos.length > 0 && modoHijo === 'vincular' ? 'hidden' : ''
+                  }`}
+                >
                   <Campo etiqueta="Nombre del niño" requerido>
                     <input
                       className="input"
@@ -226,7 +303,11 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
                   </Campo>
                 </div>
 
-                <div className="mt-4">
+                <div
+                  className={`mt-4 ${
+                    sueltos.length > 0 && modoHijo === 'vincular' ? 'hidden' : ''
+                  }`}
+                >
                   <p className="label">
                     Cursos a los que tendrá acceso <span className="text-rose-500">*</span>
                   </p>
@@ -271,9 +352,12 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
             className="btn-primary"
             disabled={
               enviando ||
-              (esEstudiante &&
-                nuevoEstudiante.courseIds.length === 0 &&
-                (!editando || (detalle && hijos.length === 0)))
+              // Vincular un nino existente no pide cursos: ya trae los suyos.
+              (esEstudiante && editando && detalle && hijos.length === 0 && vinculando
+                ? !hijoExistenteId
+                : esEstudiante &&
+                  nuevoEstudiante.courseIds.length === 0 &&
+                  (!editando || (detalle && hijos.length === 0)))
             }
           >
             {enviando ? 'Guardando...' : 'Guardar'}

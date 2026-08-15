@@ -16,9 +16,25 @@ import {
 import { aInputFecha, nombreCompleto } from '../lib/format.js';
 import SelectorCursos from '../components/SelectorCursos.jsx';
 
+/**
+ * Un acceso se vende en tres niveles y solo el de curso trae `course`. Los otros
+ * dos se nombran por el curso al que pertenecen, para que se entienda que es una
+ * compra parcial y no el curso entero.
+ */
+function etiquetaAcceso(a) {
+  if (a.course) return a.course.nombre;
+  if (a.module) return `${a.module.course.nombre} · módulo ${a.module.numero}`;
+  if (a.clase) return `${a.clase.module.course.nombre} · 1 clase`;
+  return 'Acceso suelto';
+}
+
 function FormularioEstudiante({ valorInicial, cuentas, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
-  const [courseIds, setCourseIds] = useState((valorInicial?.accesos ?? []).map((a) => a.courseId));
+  // Solo los accesos de curso completo se editan aqui; los modulos y clases
+  // sueltos se conceden al registrar su pago y no tienen casilla.
+  const [courseIds, setCourseIds] = useState(
+    (valorInicial?.accesos ?? []).filter((a) => a.courseId).map((a) => a.courseId),
+  );
   // Los cursos de sus grupos vienen incluidos y no se pueden desmarcar.
   const heredados = (valorInicial?.inscripciones ?? []).map((i) => i.group.courseId);
   const [form, setForm] = useState({
@@ -133,6 +149,15 @@ function FormularioEstudiante({ valorInicial, cuentas, cursos, onCerrar, onGuard
             ))}
           </select>
         </Campo>
+
+        {/* Los cursos se guardan en el nino, pero se ven entrando con la cuenta:
+            sin cuenta el trabajo queda hecho y nadie puede verlo. */}
+        {!form.userId && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Sin cuenta de acceso nadie podrá entrar a ver los cursos de este niño. Puedes dejarlo
+            así y vincularlo después, desde aquí o desde <strong>Usuarios → Editar</strong>.
+          </p>
+        )}
 
         <fieldset className="rounded-lg border border-slate-200 p-4">
           <legend className="px-1 text-sm font-semibold text-slate-700">
@@ -267,11 +292,14 @@ export default function Estudiantes() {
                   <td>
                     <div className="flex flex-wrap gap-1">
                       {s.accesos?.length ? (
-                        s.accesos.map((a) => (
-                          <Badge key={a.id} tono="azul">
-                            {a.course.nombre}
-                          </Badge>
-                        ))
+                        s.accesos.map((a) => {
+                          const etiqueta = etiquetaAcceso(a);
+                          return (
+                            <Badge key={a.id} tono={a.course ? 'azul' : 'ambar'}>
+                              {etiqueta}
+                            </Badge>
+                          );
+                        })
                       ) : (
                         <span className="text-xs text-slate-400">Sin cursos</span>
                       )}
@@ -294,7 +322,15 @@ export default function Estudiantes() {
                     {s.acudienteNombre ?? '—'}
                     {s.acudienteTelefono && <span className="block text-xs text-slate-400">{s.acudienteTelefono}</span>}
                   </td>
-                  <td className="text-xs text-slate-500">{s.user?.email ?? 'Sin cuenta'}</td>
+                  {/* Sin cuenta de acceso nadie puede entrar a ver sus cursos:
+                      no es un dato neutro, es algo que falta por hacer. */}
+                  <td className="text-xs text-slate-500">
+                    {s.user?.email ?? (
+                      <span title="Nadie puede entrar a ver los cursos de este niño">
+                        <Badge tono="ambar">Sin cuenta</Badge>
+                      </span>
+                    )}
+                  </td>
                   {esAdmin && (
                     <td className="text-right">
                       <div className="flex justify-end gap-1">
