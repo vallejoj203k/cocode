@@ -128,6 +128,26 @@ Student ─┬─< StudentGroup >─ Group
          └─< Payment
 ```
 
+### Los pagos habilitan el contenido
+
+Un pago dice **qué compra** y al registrarlo habilita ese contenido de una vez:
+
+| Tipo de pago     | Qué habilita                        |
+| ---------------- | ----------------------------------- |
+| Mensualidad      | Nada nuevo: renueva lo que ya tiene |
+| Curso completo   | Todas las clases del curso          |
+| Módulo suelto    | Las clases de ese módulo            |
+| Clase suelta     | Solo esa clase                      |
+
+Las clases no compradas aparecen **con candado** en lugar de esconderse, para que la familia
+vea qué puede adquirir; su contenido ni siquiera se envía al navegador, porque es justo lo que
+se está vendiendo.
+
+**Atrasarse no bloquea nada.** Pasados los días de gracia (`DIAS_GRACIA_PAGO`, 10 por defecto)
+el estudiante ve un aviso de pago pendiente y el admin lo ve marcado en cartera, pero conserva
+el acceso: dejar a un niño sin material por un pago registrado con retraso hace más daño que
+el atraso mismo.
+
 ### Quién ve qué currículo
 
 El currículo no es público para cualquier usuario con sesión: un estudiante solo ve los cursos
@@ -342,6 +362,24 @@ Applying migration `20260814210000_add_courses`
 
 Los despliegues siguientes aplican solas las migraciones nuevas al arrancar.
 
+### Borrar los datos de ejemplo
+
+El seed crea tutores, familias y pagos de muestra para que la plataforma no se vea vacía. Para
+dejar solo información real:
+
+```bash
+npm run db:limpiar                              # simula: lista qué borraría
+npm run limpiar -w backend -- --confirmar       # borra los datos de ejemplo
+npm run limpiar -w backend -- --todo --confirmar  # borra TODO lo operativo
+```
+
+En Railway, donde no hay consola, se hace con variables: `LIMPIAR_AL_ARRANCAR=demo` (o `todo`)
+más `LIMPIAR_CONFIRMAR=true`. Sin la segunda solo escribe en el log lo que borraría. Quita
+ambas después de usarlas.
+
+**Nunca borra el currículo ni las cuentas de administrador.** Los cursos que hayas creado tú se
+eliminan desde Currículo → Eliminar curso.
+
 ### Si no puedes entrar: "Email o contraseña incorrectos"
 
 Ese mensaje significa que la base responde y la tabla de usuarios existe, pero la cuenta no
@@ -392,6 +430,7 @@ sirviendo `frontend/dist`, la variable `VITE_API_URL` con la URL pública del ba
 | `npm run db:migrate`  | Crea y aplica una migración (desarrollo)             |
 | `npm run db:push`     | Sincroniza el esquema sin migración (prototipado)    |
 | `npm run db:seed`     | Siembra currículo, admin y datos de ejemplo          |
+| `npm run db:limpiar`  | Simula el borrado de los datos de ejemplo            |
 | `SEED_ON_START=true`  | Variable que hace que el arranque siembre la base    |
 | `npm run db:generate` | Regenera el cliente de Prisma                        |
 

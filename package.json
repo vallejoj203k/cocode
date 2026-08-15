@@ -19,7 +19,8 @@
     "db:push": "npm run prisma:push -w backend",
     "db:migrate": "npm run prisma:migrate -w backend",
     "db:seed": "npm run seed -w backend",
-    "lint": "echo \"(sin linter configurado)\""
+    "lint": "echo \"(sin linter configurado)\"",
+    "db:limpiar": "npm run limpiar -w backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

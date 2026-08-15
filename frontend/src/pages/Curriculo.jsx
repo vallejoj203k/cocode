@@ -303,6 +303,30 @@ function FormularioClase({ abierto, moduleId, valorInicial, onCerrar, onGuardado
 
 function Clase({ clase, esAdmin, onEditar, onEliminar }) {
   const [abierta, setAbierta] = useState(false);
+  // El backend marca como no accesible lo que el estudiante no ha comprado, y
+  // en ese caso ni siquiera envia el contenido.
+  const bloqueada = clase.accesible === false;
+
+  if (bloqueada) {
+    return (
+      <li className="border-t border-slate-100">
+        <div className="flex items-center gap-3 px-5 py-3 opacity-70">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-400">
+            {clase.numeroClase}
+          </span>
+          <span className="flex-1">
+            <span className="block font-medium text-slate-500">{clase.nombre}</span>
+            <span className="block text-xs text-slate-400">
+              Esta clase no está incluida en lo que tienes. Pídesela a tu acudiente.
+            </span>
+          </span>
+          <span title="Clase bloqueada" aria-label="Clase bloqueada">
+            🔒
+          </span>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li className="border-t border-slate-100">

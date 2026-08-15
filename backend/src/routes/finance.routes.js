@@ -6,6 +6,7 @@ import { toJSON } from '../lib/serialize.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { estadoCartera, periodoActual, resumenFinanciero, toCSV } from '../services/finance.service.js';
+import { concederAccesoPorPago } from '../services/access.service.js';
 
 const router = Router();
 
@@ -15,15 +16,45 @@ router.use(authenticate, authorize('ADMIN'));
 const METODOS = ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'NEQUI', 'DAVIPLATA', 'OTRO'];
 const CATEGORIAS = ['PLATAFORMA', 'MATERIALES', 'PAGO_TUTORES', 'MARKETING', 'ADMINISTRATIVO', 'OTRO'];
 
-const paymentSchema = z.object({
-  studentId: z.string().min(1, 'Debes seleccionar un estudiante'),
-  monto: z.coerce.number().positive('El monto debe ser mayor a cero'),
-  fecha: z.coerce.date(),
-  metodoPago: z.enum(METODOS),
-  periodoCubierto: z.string().regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato YYYY-MM'),
+const TIPOS_PAGO = ['MENSUALIDAD', 'CURSO_COMPLETO', 'MODULO', 'CLASE'];
+
+const paymentBase = z.object({
+    studentId: z.string().min(1, 'Debes seleccionar un estudiante'),
+    monto: z.coerce.number().positive('El monto debe ser mayor a cero'),
+    fecha: z.coerce.date(),
+    metodoPago: z.enum(METODOS),
+    tipo: z.enum(TIPOS_PAGO).default('MENSUALIDAD'),
+    periodoCubierto: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato YYYY-MM')
+      .optional()
+      .nullable(),
+    courseId: z.string().optional().nullable(),
+    moduleId: z.string().optional().nullable(),
+    classId: z.string().optional().nullable(),
   concepto: z.string().optional().nullable(),
   nota: z.string().optional().nullable(),
 });
+
+// Cada tipo de pago necesita saber que habilita. Se aplica solo al alta: en la
+// edicion parcial no siempre viaja el tipo.
+const paymentSchema = paymentBase
+  .refine((p) => p.tipo !== 'MENSUALIDAD' || Boolean(p.periodoCubierto), {
+    message: 'Una mensualidad necesita el periodo que cubre',
+    path: ['periodoCubierto'],
+  })
+  .refine((p) => p.tipo !== 'CURSO_COMPLETO' || Boolean(p.courseId), {
+    message: 'Indica que curso compra',
+    path: ['courseId'],
+  })
+  .refine((p) => p.tipo !== 'MODULO' || Boolean(p.moduleId), {
+    message: 'Indica que modulo compra',
+    path: ['moduleId'],
+  })
+  .refine((p) => p.tipo !== 'CLASE' || Boolean(p.classId), {
+    message: 'Indica que clase compra',
+    path: ['classId'],
+  });
 
 const expenseSchema = z.object({
   categoria: z.enum(CATEGORIAS),
@@ -70,7 +101,12 @@ router.get(
         skip,
         take: limit,
         orderBy: { fecha: 'desc' },
-        include: { student: { select: { id: true, nombre: true, apellido: true } } },
+        include: {
+          student: { select: { id: true, nombre: true, apellido: true } },
+          course: { select: { id: true, nombre: true } },
+          module: { select: { id: true, nombre: true, numero: true } },
+          clase: { select: { id: true, nombre: true, numeroClase: true } },
+        },
       }),
       prisma.payment.count({ where }),
       prisma.payment.aggregate({ where, _sum: { monto: true } }),
@@ -94,13 +130,17 @@ router.post(
       data: { ...req.body, registradoPorId: req.user.id },
       include: { student: { select: { id: true, nombre: true, apellido: true } } },
     });
-    res.status(201).json(toJSON(payment));
+
+    // Registrar el pago habilita de una vez lo que compro.
+    const acceso = await concederAccesoPorPago(payment, req.user.id);
+
+    res.status(201).json({ ...toJSON(payment), accesoConcedido: Boolean(acceso) });
   }),
 );
 
 router.patch(
   '/payments/:id',
-  validate(paymentSchema.partial()),
+  validate(paymentBase.partial()),
   asyncHandler(async (req, res) => {
     const payment = await prisma.payment.update({
       where: { id: req.params.id },

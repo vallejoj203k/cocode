@@ -10,7 +10,14 @@ import {
   MensajeError,
   Tarjeta,
 } from '../components/ui.jsx';
-import { capitalizar, formatoFecha, formatoMoneda, formatoPeriodo } from '../lib/format.js';
+import {
+  ETIQUETAS_ESTADO_PAGO,
+  TONO_ESTADO_PAGO,
+  capitalizar,
+  formatoFecha,
+  formatoMoneda,
+  formatoPeriodo,
+} from '../lib/format.js';
 
 /** Grafico de barras ingresos vs gastos, sin dependencias externas. */
 function GraficoBalance({ porMes }) {
@@ -293,6 +300,20 @@ function InicioEstudiante({ data }) {
               Ver detalle
             </Link>
           </div>
+
+          {/* Un pago atrasado avisa pero no corta el acceso. */}
+          {e.pago?.estado === 'VENCIDO' && (
+            <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+              <strong>Pago pendiente.</strong> El último mes cubierto fue{' '}
+              {formatoPeriodo(e.pago.ultimoPeriodo)}. Sigues teniendo acceso a todo; avísale a tu
+              acudiente para ponerse al día.
+            </p>
+          )}
+          {e.pago?.estado === 'EN_GRACIA' && (
+            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              La mensualidad de este mes está por vencer. Quedan {e.pago.diasGracia} días de plazo.
+            </p>
+          )}
 
           {e.cursos.length === 0 ? (
             <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">

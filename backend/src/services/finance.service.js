@@ -1,6 +1,46 @@
 import { prisma } from '../lib/prisma.js';
 import { env } from '../config/env.js';
 
+/**
+ * Estado de pago de un estudiante en el esquema mensual.
+ *
+ * Vencer NO bloquea el acceso: solo avisa a la familia y marca al estudiante en
+ * cartera. Dejar a un nino sin material por un pago registrado con retraso hace
+ * mas dano que el atraso mismo.
+ */
+export async function estadoPagoEstudiante(studentId, hoy = new Date()) {
+  const diasGracia = Number(process.env.DIAS_GRACIA_PAGO ?? 10);
+
+  const ultimo = await prisma.payment.findFirst({
+    where: { studentId, tipo: 'MENSUALIDAD', periodoCubierto: { not: null } },
+    orderBy: { periodoCubierto: 'desc' },
+    select: { periodoCubierto: true, fecha: true },
+  });
+
+  // Sin mensualidades no aplica: puede haber comprado clases sueltas.
+  if (!ultimo) return { aplica: false, estado: 'SIN_MENSUALIDAD', diasGracia };
+
+  const [anio, mes] = ultimo.periodoCubierto.split('-').map(Number);
+  // El acceso cubre hasta el final del mes pagado mas los dias de gracia.
+  const limite = new Date(Date.UTC(anio, mes, 1 + diasGracia));
+
+  const diasDeAtraso = Math.max(0, Math.floor((hoy - limite) / 86400000));
+  const finDelMesPagado = new Date(Date.UTC(anio, mes, 1));
+
+  let estado = 'AL_DIA';
+  if (hoy >= limite) estado = 'VENCIDO';
+  else if (hoy >= finDelMesPagado) estado = 'EN_GRACIA';
+
+  return {
+    aplica: true,
+    estado,
+    diasGracia,
+    diasDeAtraso,
+    ultimoPeriodo: ultimo.periodoCubierto,
+    cubiertoHasta: limite.toISOString(),
+  };
+}
+
 /** "YYYY-MM" del periodo actual. */
 export function periodoActual(date = new Date()) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
