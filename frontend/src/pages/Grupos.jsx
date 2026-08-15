@@ -16,6 +16,7 @@ function FormularioGrupo({ valorInicial, tutores, cursos, onCerrar, onGuardado }
     fechaInicio: aInputFecha(valorInicial?.fechaInicio) || hoyISO(),
     tutorId: valorInicial?.tutorId ?? '',
     cupoMaximo: valorInicial?.cupoMaximo ?? '',
+    enlaceReunion: valorInicial?.enlaceReunion ?? '',
     notas: valorInicial?.notas ?? '',
   });
   const [error, setError] = useState(null);
@@ -34,6 +35,7 @@ function FormularioGrupo({ valorInicial, tutores, cursos, onCerrar, onGuardado }
         fechaInicio: form.fechaInicio,
         tutorId: form.tutorId || null,
         cupoMaximo: form.cupoMaximo === '' ? null : Number(form.cupoMaximo),
+        enlaceReunion: form.enlaceReunion.trim(),
         notas: form.notas || null,
       };
       if (editando) await api.patch(`/groups/${valorInicial.id}`, cuerpo);
@@ -129,6 +131,19 @@ function FormularioGrupo({ valorInicial, tutores, cursos, onCerrar, onGuardado }
             />
           </Campo>
         </div>
+
+        <Campo
+          etiqueta="Enlace de la clase virtual"
+          ayuda="La sala fija de Meet o Zoom del grupo. Los estudiantes verán un botón para entrar."
+        >
+          <input
+            type="url"
+            className="input"
+            value={form.enlaceReunion}
+            onChange={(e) => setForm({ ...form, enlaceReunion: e.target.value })}
+            placeholder="https://meet.google.com/abc-defg-hij"
+          />
+        </Campo>
 
         <Campo etiqueta="Tutor asignado">
           <select
@@ -260,7 +275,18 @@ export default function Grupos() {
                 </div>
               </dl>
 
-              <Link to={`/grupos/${g.id}`} className="btn-primary mt-4 w-full">
+              {g.enlaceReunion && (
+                <a
+                  href={g.enlaceReunion}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn mt-4 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  🎥 Entrar a la clase
+                </a>
+              )}
+
+              <Link to={`/grupos/${g.id}`} className="btn-primary mt-2 w-full">
                 Abrir grupo
               </Link>
             </article>

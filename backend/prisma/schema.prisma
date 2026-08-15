@@ -124,6 +124,9 @@ model Group {
   hora        String // "16:00"
   fechaInicio DateTime
   cupoMaximo  Int?
+  /// Enlace fijo de la videollamada semanal (Meet, Zoom...). Es del grupo y no
+  /// de cada clase porque la sala se reutiliza todas las semanas.
+  enlaceReunion String?
   notas       String?
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
