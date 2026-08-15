@@ -148,6 +148,20 @@ el estudiante ve un aviso de pago pendiente y el admin lo ve marcado en cartera,
 el acceso: dejar a un niño sin material por un pago registrado con retraso hace más daño que
 el atraso mismo.
 
+### El currículo son dos páginas: catálogo y plan de clases
+
+Con un solo curso daba igual, pero con varios volcar todos los módulos en una página obligaba a
+desplazarse cientos de líneas para llegar al que interesa. Así que **Currículo** se partió en dos:
+
+| Página                | Ruta                   | Qué muestra                                                     |
+| --------------------- | ---------------------- | --------------------------------------------------------------- |
+| Catálogo              | `/curriculo`           | Una tarjeta por curso: nombre, descripción, cuántos módulos y clases tiene, cuántos grupos, duración y edad. El admin crea, edita y elimina cursos desde aquí. |
+| Plan de clases        | `/curriculo/:courseId` | Los módulos de **ese** curso con sus clases desplegables. El admin crea módulos y clases, y edita el curso, sin salir de la página. |
+
+Cada curso tiene URL propia, así que se puede guardar en favoritos o compartir con un tutor. Pedir
+por URL un curso al que no se tiene acceso muestra "Curso no encontrado" con un enlace de vuelta al
+catálogo: la API responde `404`, igual que para un curso inexistente, para no delatar que existe.
+
 ### Quién ve qué currículo
 
 El currículo no es público para cualquier usuario con sesión: un estudiante solo ve los cursos
