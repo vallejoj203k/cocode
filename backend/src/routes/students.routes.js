@@ -43,12 +43,15 @@ router.get(
   asyncHandler(async (req, res) => {
     const { page, limit, skip } = parsePagination(req.query);
     const scope = await scopeForUser(req);
-    const { search, groupId, activo } = req.query;
+    const { search, groupId, activo, sinCuenta } = req.query;
 
     const where = {
       ...scope,
       ...(activo !== undefined ? { activo: activo === 'true' } : {}),
       ...(groupId ? { inscripciones: { some: { groupId, estado: 'ACTIVO' } } } : {}),
+      // Ninos sin cuenta de acceso: nadie puede entrar a ver sus cursos, asi que
+      // hay que poder listarlos para vincularlos a una cuenta existente.
+      ...(sinCuenta === 'true' ? { userId: null } : {}),
       ...(search
         ? {
             OR: [
@@ -68,7 +71,29 @@ router.get(
         orderBy: [{ activo: 'desc' }, { nombre: 'asc' }],
         include: {
           user: { select: { id: true, nombre: true, email: true } },
-          accesos: { include: { course: { select: { id: true, nombre: true } } } },
+          // Un acceso puede ser de curso, de modulo o de clase suelta. Los tres
+          // se muestran, asi que hacen falta los nombres de los tres niveles.
+          accesos: {
+            include: {
+              course: { select: { id: true, nombre: true } },
+              module: {
+                select: {
+                  id: true,
+                  numero: true,
+                  nombre: true,
+                  course: { select: { id: true, nombre: true } },
+                },
+              },
+              clase: {
+                select: {
+                  id: true,
+                  numeroClase: true,
+                  nombre: true,
+                  module: { select: { course: { select: { id: true, nombre: true } } } },
+                },
+              },
+            },
+          },
           inscripciones: {
             where: { estado: 'ACTIVO' },
             include: { group: { select: { id: true, nombre: true, courseId: true } } },

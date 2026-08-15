@@ -102,7 +102,9 @@ router.get(
             id: true,
             nombre: true,
             apellido: true,
-            accesos: { select: { courseId: true } },
+            // Solo los cursos completos: el modal edita ese nivel, y los modulos
+            // o clases sueltos llegarian aqui como courseId null.
+            accesos: { where: { courseId: { not: null } }, select: { courseId: true } },
             inscripciones: {
               where: { estado: 'ACTIVO' },
               select: { group: { select: { courseId: true, nombre: true } } },
