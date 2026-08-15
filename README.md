@@ -380,6 +380,16 @@ ambas después de usarlas.
 **Nunca borra el currículo ni las cuentas de administrador.** Los cursos que hayas creado tú se
 eliminan desde Currículo → Eliminar curso.
 
+### Una cuenta de estudiante que "no ve nada"
+
+Si al entrar una familia solo ve *"Todavía no hay estudiantes vinculados a tu cuenta"*, la
+cuenta existe pero no tiene ningún niño asociado — los datos del curso cuelgan del niño, no de
+la cuenta. Pasa con cuentas creadas antes de que el alta exigiera los datos del estudiante, o
+si se cambió el rol de un usuario a Estudiante.
+
+En **Usuarios** esas cuentas salen marcadas con **"Sin estudiante"**; al pulsar *Editar* se
+puede crear el niño y asignarle sus cursos sin salir del formulario.
+
 ### Si no puedes entrar: "Email o contraseña incorrectos"
 
 Ese mensaje significa que la base responde y la tabla de usuarios existe, pero la cuenta no

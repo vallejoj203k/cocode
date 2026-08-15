@@ -60,10 +60,22 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
 
       if (editando) {
         await api.patch(`/users/${valorInicial.id}`, cuerpo);
-        // Los cursos viven en el nino, asi que se guardan por estudiante.
-        await Promise.all(
-          hijos.map((h) => api.patch(`/students/${h.id}`, { courseIds: seleccionHijos[h.id] ?? [] })),
-        );
+
+        if (esEstudiante && hijos.length === 0 && nuevoEstudiante.nombre) {
+          // La cuenta estaba huerfana: se crea el nino sin salir de aqui.
+          await api.post('/students', {
+            nombre: nuevoEstudiante.nombre,
+            apellido: nuevoEstudiante.apellido || null,
+            userId: valorInicial.id,
+            acudienteNombre: form.nombre,
+            courseIds: nuevoEstudiante.courseIds,
+          });
+        } else {
+          // Los cursos viven en el nino, asi que se guardan por estudiante.
+          await Promise.all(
+            hijos.map((h) => api.patch(`/students/${h.id}`, { courseIds: seleccionHijos[h.id] ?? [] })),
+          );
+        }
       } else {
         await api.post('/users', {
           ...cuerpo,
@@ -191,9 +203,41 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
             <legend className="px-1 text-sm font-semibold text-slate-700">Cursos por estudiante</legend>
 
             {hijos.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                Esta cuenta no tiene estudiantes vinculados. Créalos desde la sección Estudiantes.
-              </p>
+              <>
+                <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  Esta cuenta no tiene ningún estudiante vinculado, así que al entrar no ve nada.
+                  Crea aquí al niño para dejarla lista.
+                </p>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Campo etiqueta="Nombre del niño" requerido>
+                    <input
+                      className="input"
+                      value={nuevoEstudiante.nombre}
+                      onChange={(e) => setNuevoEstudiante({ ...nuevoEstudiante, nombre: e.target.value })}
+                    />
+                  </Campo>
+                  <Campo etiqueta="Apellido">
+                    <input
+                      className="input"
+                      value={nuevoEstudiante.apellido}
+                      onChange={(e) => setNuevoEstudiante({ ...nuevoEstudiante, apellido: e.target.value })}
+                    />
+                  </Campo>
+                </div>
+
+                <div className="mt-4">
+                  <p className="label">
+                    Cursos a los que tendrá acceso <span className="text-rose-500">*</span>
+                  </p>
+                  <SelectorCursos
+                    cursos={cursos}
+                    seleccion={nuevoEstudiante.courseIds}
+                    onCambio={(courseIds) => setNuevoEstudiante({ ...nuevoEstudiante, courseIds })}
+                    requerido
+                  />
+                </div>
+              </>
             ) : (
               <div className="space-y-5">
                 {hijos.map((hijo) => (
@@ -225,7 +269,12 @@ function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
           <button
             type="submit"
             className="btn-primary"
-            disabled={enviando || (!editando && esEstudiante && nuevoEstudiante.courseIds.length === 0)}
+            disabled={
+              enviando ||
+              (esEstudiante &&
+                nuevoEstudiante.courseIds.length === 0 &&
+                (!editando || (detalle && hijos.length === 0)))
+            }
           >
             {enviando ? 'Guardando...' : 'Guardar'}
           </button>
@@ -336,7 +385,14 @@ export default function Usuarios() {
                   </td>
                   <td className="text-xs text-slate-500">
                     {u.rol === 'TUTOR' && `${u._count?.gruposComoTutor ?? 0} grupo(s)`}
-                    {u.rol === 'ESTUDIANTE' && `${u._count?.estudiantes ?? 0} estudiante(s)`}
+                    {u.rol === 'ESTUDIANTE' &&
+                      ((u._count?.estudiantes ?? 0) === 0 ? (
+                        // Sin nino vinculado la cuenta no sirve de nada: al
+                        // entrar solo ve una pantalla vacia.
+                        <Badge tono="rojo">Sin estudiante</Badge>
+                      ) : (
+                        `${u._count.estudiantes} estudiante(s)`
+                      ))}
                     {u.rol === 'ADMIN' && '—'}
                   </td>
                   <td className="text-right">
