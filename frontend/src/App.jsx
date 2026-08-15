@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx';
 import LoginEstudiante from './pages/LoginEstudiante.jsx';
 import Inicio from './pages/Inicio.jsx';
 import Curriculo from './pages/Curriculo.jsx';
+import CursoDetalle from './pages/CursoDetalle.jsx';
 import Grupos from './pages/Grupos.jsx';
 import GrupoDetalle from './pages/GrupoDetalle.jsx';
 import Estudiantes from './pages/Estudiantes.jsx';
@@ -30,6 +31,7 @@ export default function App() {
       >
         <Route index element={<Inicio />} />
         <Route path="curriculo" element={<Curriculo />} />
+        <Route path="curriculo/:courseId" element={<CursoDetalle />} />
         <Route
           path="grupos"
           element={
