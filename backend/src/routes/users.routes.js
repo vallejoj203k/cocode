@@ -6,19 +6,35 @@ import { ApiError, asyncHandler, paginated, parsePagination } from '../lib/http.
 import { publicUser } from '../lib/serialize.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { sincronizarAccesos } from '../services/access.service.js';
 
 const router = Router();
 
 // Toda la gestion de usuarios es exclusiva del Admin.
 router.use(authenticate, authorize('ADMIN'));
 
-const createUserSchema = z.object({
-  nombre: z.string().min(2, 'El nombre es obligatorio'),
-  email: z.string().email('Email invalido'),
-  password: z.string().min(8, 'La contrasena debe tener al menos 8 caracteres'),
-  rol: z.enum(['ADMIN', 'TUTOR', 'ESTUDIANTE']),
-  telefono: z.string().optional().nullable(),
-});
+const createUserSchema = z
+  .object({
+    nombre: z.string().min(2, 'El nombre es obligatorio'),
+    email: z.string().email('Email invalido'),
+    password: z.string().min(8, 'La contrasena debe tener al menos 8 caracteres'),
+    rol: z.enum(['ADMIN', 'TUTOR', 'ESTUDIANTE']),
+    telefono: z.string().optional().nullable(),
+    // Al crear una cuenta de estudiante se crea tambien la ficha del nino, con
+    // los cursos que el admin le habilita.
+    estudiante: z
+      .object({
+        nombre: z.string().min(2, 'El nombre del estudiante es obligatorio'),
+        apellido: z.string().optional().nullable(),
+        fechaNacimiento: z.coerce.date().optional().nullable(),
+        courseIds: z.array(z.string()).min(1, 'Debes asignarle al menos un curso'),
+      })
+      .optional(),
+  })
+  .refine((datos) => datos.rol !== 'ESTUDIANTE' || Boolean(datos.estudiante), {
+    message: 'Una cuenta de estudiante necesita los datos del nino y su curso',
+    path: ['estudiante'],
+  });
 
 const updateUserSchema = z.object({
   nombre: z.string().min(2).optional(),
@@ -81,7 +97,18 @@ router.get(
       where: { id: req.params.id },
       include: {
         gruposComoTutor: { select: { id: true, nombre: true } },
-        estudiantes: { select: { id: true, nombre: true, apellido: true } },
+        estudiantes: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            accesos: { select: { courseId: true } },
+            inscripciones: {
+              where: { estado: 'ACTIVO' },
+              select: { group: { select: { courseId: true, nombre: true } } },
+            },
+          },
+        },
       },
     });
     if (!user) throw ApiError.notFound('Usuario no encontrado');
@@ -93,15 +120,37 @@ router.post(
   '/',
   validate(createUserSchema),
   asyncHandler(async (req, res) => {
-    const { password, email, ...rest } = req.body;
+    const { password, email, estudiante, ...rest } = req.body;
+
+    if (estudiante) {
+      const cursos = await prisma.course.count({ where: { id: { in: estudiante.courseIds } } });
+      if (cursos !== new Set(estudiante.courseIds).size) {
+        throw ApiError.badRequest('Alguno de los cursos indicados no existe');
+      }
+    }
+
     const user = await prisma.user.create({
       data: {
         ...rest,
-        email: email.toLowerCase(),
+        email: email.trim().toLowerCase(),
         passwordHash: await bcrypt.hash(password, 10),
       },
     });
-    res.status(201).json(publicUser(user));
+
+    // La ficha del nino se crea en el mismo paso que su cuenta de acceso.
+    if (estudiante) {
+      const { courseIds, ...datosEstudiante } = estudiante;
+      const student = await prisma.student.create({
+        data: { ...datosEstudiante, userId: user.id, acudienteNombre: rest.nombre },
+      });
+      await sincronizarAccesos(student.id, courseIds, req.user.id);
+    }
+
+    const creado = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { estudiantes: { select: { id: true, nombre: true, apellido: true } } },
+    });
+    res.status(201).json(publicUser(creado));
   }),
 );
 

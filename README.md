@@ -128,6 +128,24 @@ Student ─┬─< StudentGroup >─ Group
          └─< Payment
 ```
 
+### Quién ve qué currículo
+
+El currículo no es público para cualquier usuario con sesión: un estudiante solo ve los cursos
+a los que tiene acceso.
+
+- **`StudentCourse`** guarda los cursos que el admin le habilita a cada niño (los que pagó).
+- El acceso efectivo es esa lista **unida** a los cursos de los grupos donde está inscrito, para
+  que nunca ocurra el caso absurdo de estar en un grupo y no poder abrir su propio currículo.
+- El permiso vive en el **niño**, no en la cuenta: si una familia tiene a un hijo en Python y a
+  otro en Scratch, cada uno ve el suyo.
+- Los cursos sin acceso **no aparecen**, y pedirlos por API responde `404` en vez de `403`, para
+  no delatar que existen.
+- **Admin y tutores ven el catálogo completo**: son el equipo y necesitan preparar las clases.
+
+Al crear una cuenta con rol Estudiante, el formulario pide en el mismo paso el nombre del niño y
+al menos un curso; sin curso no deja guardar. Después se añaden o quitan desde **Usuarios →
+Editar** (cursos de cada hijo) o desde **Estudiantes → Editar**.
+
 ### Varios cursos en paralelo
 
 `Course` es el programa completo (Python, Scratch, robótica…). Cada curso tiene su propio
@@ -183,7 +201,7 @@ Todas las rutas cuelgan de `/api` y, salvo el login, requieren la cabecera
 ### Currículo
 | Método | Ruta                                  | Quién  |
 | ------ | ------------------------------------- | ------ |
-| GET    | `/curriculum/courses`                 | sesión |
+| GET    | `/curriculum/courses`                 | sesión (el estudiante solo ve los suyos) |
 | POST   | `/curriculum/courses`                 | admin  |
 | PATCH  | `/curriculum/courses/:id`             | admin  |
 | DELETE | `/curriculum/courses/:id`             | admin  |
@@ -207,13 +225,13 @@ la API responde `409` y sugiere archivarlo.
 | Método | Ruta                | Quién  | Notas                                     |
 | ------ | ------------------- | ------ | ----------------------------------------- |
 | GET    | `/users`            | admin  | Filtros: `rol`, `search`, `activo`, `page`|
-| POST   | `/users`            | admin  |                                           |
+| POST   | `/users`            | admin  | Rol `ESTUDIANTE` exige `estudiante` con `courseIds` |
 | PATCH  | `/users/:id`        | admin  |                                           |
 | DELETE | `/users/:id`        | admin  | Baja lógica                               |
 | GET    | `/students`         | sesión | Alcance según rol                         |
-| GET    | `/students/:id`     | sesión | Incluye resumen de asistencia             |
+| GET    | `/students/:id`     | sesión | Incluye resumen de asistencia y sus cursos |
 | POST   | `/students`         | admin  |                                           |
-| PATCH  | `/students/:id`     | admin  |                                           |
+| PATCH  | `/students/:id`     | admin  | `courseIds` reemplaza sus accesos          |
 | DELETE | `/students/:id`     | admin  | Baja lógica + retiro de grupos            |
 
 ### Grupos, avance y asistencia
