@@ -74,12 +74,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  gruposComoTutor    Group[]      @relation("GroupTutor")
-  estudiantes        Student[]    @relation("StudentAccount")
-  sugerencias        Suggestion[] @relation("SuggestionAuthor")
-  sugerenciasAtendidas Suggestion[] @relation("SuggestionHandler")
-  pagosRegistrados   Payment[]    @relation("PaymentRecorder")
-  gastosRegistrados  Expense[]    @relation("ExpenseRecorder")
+  gruposComoTutor      Group[]         @relation("GroupTutor")
+  estudiantes          Student[]       @relation("StudentAccount")
+  sugerencias          Suggestion[]    @relation("SuggestionAuthor")
+  sugerenciasAtendidas Suggestion[]    @relation("SuggestionHandler")
+  pagosRegistrados     Payment[]       @relation("PaymentRecorder")
+  accesosConcedidos    StudentCourse[] @relation("CourseAccessGranter")
+  gastosRegistrados    Expense[]       @relation("ExpenseRecorder")
 
   @@index([rol])
   @@map("users")
@@ -107,10 +108,33 @@ model Student {
   inscripciones StudentGroup[]
   asistencias   Attendance[]
   pagos         Payment[]
+  accesos       StudentCourse[]
 
   @@index([userId])
   @@index([activo])
   @@map("students")
+}
+
+/// Curso al que el admin le dio acceso a un estudiante (normalmente porque lo
+/// pago). El acceso efectivo es esta lista UNIDA a los cursos de los grupos
+/// donde esta inscrito: asi nunca ocurre que este en un grupo y no pueda ver el
+/// curriculo de ese mismo curso.
+model StudentCourse {
+  id          String   @id @default(cuid())
+  concedidoEn DateTime @default(now())
+  nota        String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  concedidoPorId String?
+  concedidoPor   User?   @relation("CourseAccessGranter", fields: [concedidoPorId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, courseId])
+  @@index([courseId])
+  @@map("student_courses")
 }
 
 // ---------------------------------------------------------------------------
@@ -118,19 +142,19 @@ model Student {
 // ---------------------------------------------------------------------------
 
 model Group {
-  id          String   @id @default(cuid())
-  nombre      String
-  diaSemana   String // LUNES, MARTES, ...
-  hora        String // "16:00"
-  fechaInicio DateTime
-  cupoMaximo  Int?
+  id            String   @id @default(cuid())
+  nombre        String
+  diaSemana     String // LUNES, MARTES, ...
+  hora          String // "16:00"
+  fechaInicio   DateTime
+  cupoMaximo    Int?
   /// Enlace fijo de la videollamada semanal (Meet, Zoom...). Es del grupo y no
   /// de cada clase porque la sala se reutiliza todas las semanas.
   enlaceReunion String?
-  notas       String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  notas         String?
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tutorId String?
   tutor   User?   @relation("GroupTutor", fields: [tutorId], references: [id], onDelete: SetNull)
@@ -185,6 +209,7 @@ model Course {
 
   modulos Module[]
   grupos  Group[]
+  accesos StudentCourse[]
 
   @@index([orden])
   @@map("courses")
@@ -240,12 +265,12 @@ model Class {
 // ---------------------------------------------------------------------------
 
 model GroupProgress {
-  id            String      @id @default(cuid())
-  estado        ClassStatus @default(PENDIENTE)
-  fechaDictada  DateTime?
-  notas         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String      @id @default(cuid())
+  estado       ClassStatus @default(PENDIENTE)
+  fechaDictada DateTime?
+  notas        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   groupId String
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)

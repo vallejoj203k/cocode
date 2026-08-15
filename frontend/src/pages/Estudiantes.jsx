@@ -14,9 +14,13 @@ import {
   Modal,
 } from '../components/ui.jsx';
 import { aInputFecha, nombreCompleto } from '../lib/format.js';
+import SelectorCursos from '../components/SelectorCursos.jsx';
 
-function FormularioEstudiante({ valorInicial, cuentas, onCerrar, onGuardado }) {
+function FormularioEstudiante({ valorInicial, cuentas, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
+  const [courseIds, setCourseIds] = useState((valorInicial?.accesos ?? []).map((a) => a.courseId));
+  // Los cursos de sus grupos vienen incluidos y no se pueden desmarcar.
+  const heredados = (valorInicial?.inscripciones ?? []).map((i) => i.group.courseId);
   const [form, setForm] = useState({
     nombre: valorInicial?.nombre ?? '',
     apellido: valorInicial?.apellido ?? '',
@@ -44,6 +48,7 @@ function FormularioEstudiante({ valorInicial, cuentas, onCerrar, onGuardado }) {
         acudienteEmail: form.acudienteEmail || '',
         userId: form.userId || null,
         notas: form.notas || null,
+        courseIds,
       };
       if (editando) await api.patch(`/students/${valorInicial.id}`, cuerpo);
       else await api.post('/students', cuerpo);
@@ -129,6 +134,21 @@ function FormularioEstudiante({ valorInicial, cuentas, onCerrar, onGuardado }) {
           </select>
         </Campo>
 
+        <fieldset className="rounded-lg border border-slate-200 p-4">
+          <legend className="px-1 text-sm font-semibold text-slate-700">
+            Cursos a los que tiene acceso
+          </legend>
+          <p className="mb-3 text-xs text-slate-500">
+            Marca los cursos que pagó. Solo verá el currículo de estos.
+          </p>
+          <SelectorCursos
+            cursos={cursos}
+            seleccion={courseIds}
+            heredados={heredados}
+            onCambio={setCourseIds}
+          />
+        </fieldset>
+
         <Campo etiqueta="Notas">
           <textarea
             className="input"
@@ -162,6 +182,7 @@ export default function Estudiantes() {
     { rol: 'ESTUDIANTE', activo: 'true', limit: 200 },
     { skip: !esAdmin },
   );
+  const { data: cursos } = useFetch('/curriculum/courses', { activo: 'true' }, { skip: !esAdmin });
 
   const [modal, setModal] = useState(null);
   const [porDarBaja, setPorDarBaja] = useState(null);
@@ -223,6 +244,7 @@ export default function Estudiantes() {
             <thead>
               <tr>
                 <th>Estudiante</th>
+                <th>Cursos</th>
                 <th>Grupos</th>
                 <th>Acudiente</th>
                 <th>Cuenta de acceso</th>
@@ -241,6 +263,19 @@ export default function Estudiantes() {
                         <Badge tono="rojo">Inactivo</Badge>
                       </span>
                     )}
+                  </td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {s.accesos?.length ? (
+                        s.accesos.map((a) => (
+                          <Badge key={a.id} tono="azul">
+                            {a.course.nombre}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400">Sin cursos</span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <div className="flex flex-wrap gap-1">
@@ -293,6 +328,7 @@ export default function Estudiantes() {
         <FormularioEstudiante
           valorInicial={modal.valorInicial}
           cuentas={cuentasResp?.items ?? []}
+          cursos={cursos ?? []}
           onCerrar={() => setModal(null)}
           onGuardado={() => {
             setModal(null);

@@ -5,6 +5,7 @@ import { ApiError, asyncHandler } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { cursosVisibles } from '../services/access.service.js';
 
 const router = Router();
 
@@ -40,13 +41,30 @@ const classSchema = z.object({
   recursosUrl: z.string().url('Debe ser una URL valida').optional().nullable().or(z.literal('')),
 });
 
+/**
+ * Lanza 404 si el usuario no tiene acceso al curso. Se usa 404 y no 403 para no
+ * revelar la existencia de un curso que no le corresponde.
+ */
+async function assertPuedeVerCurso(user, courseId) {
+  const visibles = await cursosVisibles(user);
+  if (visibles && !visibles.includes(courseId)) {
+    throw ApiError.notFound('Curso no encontrado');
+  }
+}
+
 // --- Cursos --------------------------------------------------------------
 
 router.get(
   '/courses',
   asyncHandler(async (req, res) => {
+    // El estudiante solo ve los cursos a los que tiene acceso.
+    const visibles = await cursosVisibles(req.user);
+
     const courses = await prisma.course.findMany({
-      where: req.query.activo !== undefined ? { activo: req.query.activo === 'true' } : {},
+      where: {
+        ...(req.query.activo !== undefined ? { activo: req.query.activo === 'true' } : {}),
+        ...(visibles ? { id: { in: visibles } } : {}),
+      },
       orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
       include: {
         _count: { select: { modulos: true, grupos: true } },
@@ -116,9 +134,15 @@ router.delete(
 router.get(
   '/modules',
   asyncHandler(async (req, res) => {
-    // Sin courseId se devuelve el curriculo de todos los cursos.
+    const visibles = await cursosVisibles(req.user);
+    if (req.query.courseId) await assertPuedeVerCurso(req.user, req.query.courseId);
+
+    // Sin courseId se devuelve el curriculo de todos los cursos accesibles.
     const modules = await prisma.module.findMany({
-      where: req.query.courseId ? { courseId: req.query.courseId } : {},
+      where: {
+        ...(req.query.courseId ? { courseId: req.query.courseId } : {}),
+        ...(visibles && !req.query.courseId ? { courseId: { in: visibles } } : {}),
+      },
       orderBy: [{ course: { orden: 'asc' } }, { orden: 'asc' }],
       include: {
         clases: { orderBy: { numeroClase: 'asc' } },
@@ -138,6 +162,7 @@ router.get(
       include: { clases: { orderBy: { numeroClase: 'asc' } }, course: true },
     });
     if (!module) throw ApiError.notFound('Modulo no encontrado');
+    await assertPuedeVerCurso(req.user, module.courseId);
     res.json(toJSON(module));
   }),
 );
@@ -197,6 +222,7 @@ router.get(
       include: { module: true },
     });
     if (!clase) throw ApiError.notFound('Clase no encontrada');
+    await assertPuedeVerCurso(req.user, clase.module.courseId);
     res.json(toJSON(clase));
   }),
 );

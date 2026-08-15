@@ -5,6 +5,7 @@ import { ApiError, asyncHandler, paginated, parsePagination } from '../lib/http.
 import { toJSON } from '../lib/serialize.js';
 import { accountStudentIds, authenticate, authorize, isAdmin, isTutor, tutorGroupIds } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { sincronizarAccesos } from '../services/access.service.js';
 
 const router = Router();
 router.use(authenticate);
@@ -19,6 +20,8 @@ const studentSchema = z.object({
   notas: z.string().optional().nullable(),
   userId: z.string().optional().nullable(),
   activo: z.boolean().optional(),
+  /// Cursos a los que el admin le da acceso (los que pago).
+  courseIds: z.array(z.string()).optional(),
 });
 
 /**
@@ -65,9 +68,10 @@ router.get(
         orderBy: [{ activo: 'desc' }, { nombre: 'asc' }],
         include: {
           user: { select: { id: true, nombre: true, email: true } },
+          accesos: { include: { course: { select: { id: true, nombre: true } } } },
           inscripciones: {
             where: { estado: 'ACTIVO' },
-            include: { group: { select: { id: true, nombre: true } } },
+            include: { group: { select: { id: true, nombre: true, courseId: true } } },
           },
         },
       }),
@@ -86,7 +90,14 @@ router.get(
       where: { AND: [{ id: req.params.id }, scope] },
       include: {
         user: { select: { id: true, nombre: true, email: true } },
-        inscripciones: { include: { group: { select: { id: true, nombre: true, diaSemana: true, hora: true } } } },
+        accesos: { include: { course: { select: { id: true, nombre: true } } } },
+        inscripciones: {
+          include: {
+            group: {
+              select: { id: true, nombre: true, diaSemana: true, hora: true, courseId: true },
+            },
+          },
+        },
         asistencias: {
           include: {
             groupProgress: {
@@ -120,9 +131,12 @@ router.post(
   authorize('ADMIN'),
   validate(studentSchema),
   asyncHandler(async (req, res) => {
-    const data = { ...req.body };
+    const { courseIds, ...data } = req.body;
     if (data.acudienteEmail === '') data.acudienteEmail = null;
+
     const student = await prisma.student.create({ data });
+    if (courseIds?.length) await sincronizarAccesos(student.id, courseIds, req.user.id);
+
     res.status(201).json(toJSON(student));
   }),
 );
@@ -132,10 +146,18 @@ router.patch(
   authorize('ADMIN'),
   validate(studentSchema.partial()),
   asyncHandler(async (req, res) => {
-    const data = { ...req.body };
+    const { courseIds, ...data } = req.body;
     if (data.acudienteEmail === '') data.acudienteEmail = null;
+
     const student = await prisma.student.update({ where: { id: req.params.id }, data });
-    res.json(toJSON(student));
+    // Se envia la lista completa: lo que no venga se revoca.
+    if (courseIds) await sincronizarAccesos(student.id, courseIds, req.user.id);
+
+    const actualizado = await prisma.student.findUnique({
+      where: { id: student.id },
+      include: { accesos: { include: { course: { select: { id: true, nombre: true } } } } },
+    });
+    res.json(toJSON(actualizado));
   }),
 );
 

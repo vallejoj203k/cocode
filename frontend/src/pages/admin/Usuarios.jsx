@@ -13,10 +13,11 @@ import {
 } from '../../components/ui.jsx';
 import { ETIQUETAS_ROL } from '../../lib/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import SelectorCursos from '../../components/SelectorCursos.jsx';
 
 const TONO_ROL = { ADMIN: 'rojo', TUTOR: 'violeta', ESTUDIANTE: 'azul' };
 
-function FormularioUsuario({ valorInicial, onCerrar, onGuardado }) {
+function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
   const [form, setForm] = useState({
     nombre: valorInicial?.nombre ?? '',
@@ -25,8 +26,23 @@ function FormularioUsuario({ valorInicial, onCerrar, onGuardado }) {
     telefono: valorInicial?.telefono ?? '',
     password: '',
   });
+
+  // Alta: datos del nino y su curso, en el mismo paso que la cuenta.
+  const [nuevoEstudiante, setNuevoEstudiante] = useState({ nombre: '', apellido: '', courseIds: [] });
+
+  // Edicion: cursos de cada hijo ya vinculado a la cuenta.
+  const { data: detalle } = useFetch(`/users/${valorInicial?.id}`, undefined, { skip: !editando });
+  const [cursosPorHijo, setCursosPorHijo] = useState(null);
+
+  const hijos = detalle?.estudiantes ?? [];
+  const seleccionHijos =
+    cursosPorHijo ??
+    Object.fromEntries(hijos.map((h) => [h.id, h.accesos.map((a) => a.courseId)]));
+
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
+
+  const esEstudiante = form.rol === 'ESTUDIANTE';
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -41,8 +57,27 @@ function FormularioUsuario({ valorInicial, onCerrar, onGuardado }) {
         // Al editar, la contrasena solo se envia si se escribio una nueva.
         ...(form.password ? { password: form.password } : {}),
       };
-      if (editando) await api.patch(`/users/${valorInicial.id}`, cuerpo);
-      else await api.post('/users', cuerpo);
+
+      if (editando) {
+        await api.patch(`/users/${valorInicial.id}`, cuerpo);
+        // Los cursos viven en el nino, asi que se guardan por estudiante.
+        await Promise.all(
+          hijos.map((h) => api.patch(`/students/${h.id}`, { courseIds: seleccionHijos[h.id] ?? [] })),
+        );
+      } else {
+        await api.post('/users', {
+          ...cuerpo,
+          ...(esEstudiante
+            ? {
+                estudiante: {
+                  nombre: nuevoEstudiante.nombre,
+                  apellido: nuevoEstudiante.apellido || null,
+                  courseIds: nuevoEstudiante.courseIds,
+                },
+              }
+            : {}),
+        });
+      }
       onGuardado();
     } catch (err) {
       setError(err);
@@ -52,7 +87,12 @@ function FormularioUsuario({ valorInicial, onCerrar, onGuardado }) {
   };
 
   return (
-    <Modal abierto titulo={editando ? 'Editar usuario' : 'Nuevo usuario'} onCerrar={onCerrar}>
+    <Modal
+      abierto
+      titulo={editando ? 'Editar usuario' : 'Nuevo usuario'}
+      onCerrar={onCerrar}
+      ancho="max-w-2xl"
+    >
       <form onSubmit={enviar} className="space-y-4">
         <Campo etiqueta="Nombre" requerido>
           <input
@@ -108,13 +148,85 @@ function FormularioUsuario({ valorInicial, onCerrar, onGuardado }) {
           />
         </Campo>
 
+        {/* Alta de una cuenta de estudiante: el nino y su curso van aqui mismo. */}
+        {!editando && esEstudiante && (
+          <fieldset className="rounded-lg border border-slate-200 p-4">
+            <legend className="px-1 text-sm font-semibold text-slate-700">Estudiante</legend>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Campo etiqueta="Nombre del niño" requerido>
+                <input
+                  className="input"
+                  value={nuevoEstudiante.nombre}
+                  onChange={(e) => setNuevoEstudiante({ ...nuevoEstudiante, nombre: e.target.value })}
+                  required
+                />
+              </Campo>
+              <Campo etiqueta="Apellido">
+                <input
+                  className="input"
+                  value={nuevoEstudiante.apellido}
+                  onChange={(e) => setNuevoEstudiante({ ...nuevoEstudiante, apellido: e.target.value })}
+                />
+              </Campo>
+            </div>
+
+            <div className="mt-4">
+              <p className="label">
+                Cursos a los que tendrá acceso <span className="text-rose-500">*</span>
+              </p>
+              <SelectorCursos
+                cursos={cursos}
+                seleccion={nuevoEstudiante.courseIds}
+                onCambio={(courseIds) => setNuevoEstudiante({ ...nuevoEstudiante, courseIds })}
+                requerido
+              />
+            </div>
+          </fieldset>
+        )}
+
+        {/* Edicion: cursos de cada hijo vinculado a la cuenta. */}
+        {editando && valorInicial.rol === 'ESTUDIANTE' && (
+          <fieldset className="rounded-lg border border-slate-200 p-4">
+            <legend className="px-1 text-sm font-semibold text-slate-700">Cursos por estudiante</legend>
+
+            {hijos.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Esta cuenta no tiene estudiantes vinculados. Créalos desde la sección Estudiantes.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {hijos.map((hijo) => (
+                  <div key={hijo.id}>
+                    <p className="mb-2 text-sm font-semibold text-slate-700">
+                      {[hijo.nombre, hijo.apellido].filter(Boolean).join(' ')}
+                    </p>
+                    <SelectorCursos
+                      cursos={cursos}
+                      seleccion={seleccionHijos[hijo.id] ?? []}
+                      heredados={hijo.inscripciones.map((i) => i.group.courseId)}
+                      onCambio={(courseIds) =>
+                        setCursosPorHijo({ ...seleccionHijos, [hijo.id]: courseIds })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </fieldset>
+        )}
+
         <MensajeError error={error} />
 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" className="btn-secondary" onClick={onCerrar}>
             Cancelar
           </button>
-          <button type="submit" className="btn-primary" disabled={enviando}>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={enviando || (!editando && esEstudiante && nuevoEstudiante.courseIds.length === 0)}
+          >
             {enviando ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
@@ -128,6 +240,7 @@ export default function Usuarios() {
   const [filtroRol, setFiltroRol] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const { data, cargando, error, recargar } = useFetch('/users', { rol: filtroRol, search: busqueda, limit: 100 });
+  const { data: cursos } = useFetch('/curriculum/courses', { activo: 'true' });
 
   const [modal, setModal] = useState(null);
   const [porDarBaja, setPorDarBaja] = useState(null);
@@ -265,6 +378,7 @@ export default function Usuarios() {
       {modal && (
         <FormularioUsuario
           valorInicial={modal.valorInicial}
+          cursos={cursos ?? []}
           onCerrar={() => setModal(null)}
           onGuardado={() => {
             setModal(null);
