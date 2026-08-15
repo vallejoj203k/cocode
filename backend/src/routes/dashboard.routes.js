@@ -3,7 +3,12 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
 import { authenticate } from '../middleware/auth.js';
-import { estadoCartera, periodoActual, resumenFinanciero } from '../services/finance.service.js';
+import {
+  estadoCartera,
+  estadoPagoEstudiante,
+  periodoActual,
+  resumenFinanciero,
+} from '../services/finance.service.js';
 import {
   clasesEnOrden,
   porcentajeAvance as avance,
@@ -216,10 +221,13 @@ async function dashboardEstudiante(userId) {
 
       const registradas = s.asistencias.length;
       const presentes = s.asistencias.filter((a) => a.asistio).length;
+      // Un pago vencido avisa, no bloquea: el nino sigue viendo su curso.
+      const pago = await estadoPagoEstudiante(s.id);
 
       return {
         id: s.id,
         nombre: [s.nombre, s.apellido].filter(Boolean).join(' '),
+        pago,
         cursos,
         asistencia: {
           registradas,

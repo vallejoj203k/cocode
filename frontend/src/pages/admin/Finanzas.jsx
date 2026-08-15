@@ -14,7 +14,10 @@ import {
 } from '../../components/ui.jsx';
 import {
   ETIQUETAS_CATEGORIA,
+  ETIQUETAS_ESTADO_PAGO,
   ETIQUETAS_METODO,
+  ETIQUETAS_TIPO_PAGO,
+  TONO_ESTADO_PAGO,
   aInputFecha,
   formatoFecha,
   formatoMoneda,
@@ -149,17 +152,28 @@ function Balance() {
 
 // --- Ingresos ------------------------------------------------------------
 
-function FormularioPago({ valorInicial, estudiantes, onCerrar, onGuardado }) {
+function FormularioPago({ valorInicial, estudiantes, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
   const [form, setForm] = useState({
     studentId: valorInicial?.studentId ?? '',
     monto: valorInicial?.monto ?? '',
     fecha: aInputFecha(valorInicial?.fecha) || hoyISO(),
     metodoPago: valorInicial?.metodoPago ?? 'TRANSFERENCIA',
+    tipo: valorInicial?.tipo ?? 'MENSUALIDAD',
     periodoCubierto: valorInicial?.periodoCubierto ?? periodoActual(),
+    courseId: valorInicial?.courseId ?? '',
+    moduleId: valorInicial?.moduleId ?? '',
+    classId: valorInicial?.classId ?? '',
     concepto: valorInicial?.concepto ?? '',
     nota: valorInicial?.nota ?? '',
   });
+
+  // Para vender un modulo o una clase hay que poder elegirlos del curso.
+  const { data: modulos } = useFetch(
+    '/curriculum/modules',
+    { courseId: form.courseId },
+    { skip: !form.courseId || form.tipo === 'MENSUALIDAD' || form.tipo === 'CURSO_COMPLETO' },
+  );
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -168,12 +182,18 @@ function FormularioPago({ valorInicial, estudiantes, onCerrar, onGuardado }) {
     setEnviando(true);
     setError(null);
     try {
+      // Solo se envia lo que corresponde al tipo, para no dejar referencias
+      // sueltas de un tipo anterior.
       const cuerpo = {
         studentId: form.studentId,
         monto: Number(form.monto),
         fecha: form.fecha,
         metodoPago: form.metodoPago,
-        periodoCubierto: form.periodoCubierto,
+        tipo: form.tipo,
+        periodoCubierto: form.tipo === 'MENSUALIDAD' ? form.periodoCubierto : null,
+        courseId: form.tipo === 'CURSO_COMPLETO' ? form.courseId : null,
+        moduleId: form.tipo === 'MODULO' ? form.moduleId : null,
+        classId: form.tipo === 'CLASE' ? form.classId : null,
         concepto: form.concepto || null,
         nota: form.nota || null,
       };
@@ -243,6 +263,22 @@ function FormularioPago({ valorInicial, estudiantes, onCerrar, onGuardado }) {
               ))}
             </select>
           </Campo>
+          <Campo etiqueta="Qué compra" requerido>
+            <select
+              className="input"
+              value={form.tipo}
+              onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+            >
+              {Object.entries(ETIQUETAS_TIPO_PAGO).map(([valor, etiqueta]) => (
+                <option key={valor} value={valor}>
+                  {etiqueta}
+                </option>
+              ))}
+            </select>
+          </Campo>
+        </div>
+
+        {form.tipo === 'MENSUALIDAD' && (
           <Campo etiqueta="Periodo que cubre" requerido ayuda="Mes de la mensualidad">
             <input
               type="month"
@@ -252,7 +288,63 @@ function FormularioPago({ valorInicial, estudiantes, onCerrar, onGuardado }) {
               required
             />
           </Campo>
-        </div>
+        )}
+
+        {form.tipo !== 'MENSUALIDAD' && (
+          <Campo etiqueta="Curso" requerido ayuda="Al guardar, el estudiante queda habilitado.">
+            <select
+              className="input"
+              value={form.courseId}
+              onChange={(e) => setForm({ ...form, courseId: e.target.value, moduleId: '', classId: '' })}
+              required
+            >
+              <option value="">Selecciona un curso</option>
+              {cursos.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </Campo>
+        )}
+
+        {form.tipo === 'MODULO' && (
+          <Campo etiqueta="Módulo" requerido>
+            <select
+              className="input"
+              value={form.moduleId}
+              onChange={(e) => setForm({ ...form, moduleId: e.target.value })}
+              required
+            >
+              <option value="">Selecciona un módulo</option>
+              {(modulos ?? []).map((m) => (
+                <option key={m.id} value={m.id}>
+                  M{m.numero} · {m.nombre}
+                </option>
+              ))}
+            </select>
+          </Campo>
+        )}
+
+        {form.tipo === 'CLASE' && (
+          <Campo etiqueta="Clase" requerido>
+            <select
+              className="input"
+              value={form.classId}
+              onChange={(e) => setForm({ ...form, classId: e.target.value })}
+              required
+            >
+              <option value="">Selecciona una clase</option>
+              {(modulos ?? []).flatMap((m) =>
+                m.clases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    M{m.numero} · Clase {c.numeroClase}: {c.nombre}
+                  </option>
+                )),
+              )}
+            </select>
+          </Campo>
+        )}
 
         <Campo etiqueta="Concepto">
           <input
@@ -281,6 +373,7 @@ function FormularioPago({ valorInicial, estudiantes, onCerrar, onGuardado }) {
 function Ingresos() {
   const { data, cargando, error, recargar } = useFetch('/finance/payments', { limit: 100 });
   const { data: estudiantesResp } = useFetch('/students', { activo: 'true', limit: 200 });
+  const { data: cursos } = useFetch('/curriculum/courses', { activo: 'true' });
   const [modal, setModal] = useState(null);
   const [porEliminar, setPorEliminar] = useState(null);
   const [errorAccion, setErrorAccion] = useState(null);
@@ -337,7 +430,7 @@ function Ingresos() {
               <tr>
                 <th>Fecha</th>
                 <th>Estudiante</th>
-                <th>Periodo</th>
+                <th>Concepto</th>
                 <th>Método</th>
                 <th className="text-right">Monto</th>
                 <th />
@@ -348,7 +441,16 @@ function Ingresos() {
                 <tr key={p.id}>
                   <td className="whitespace-nowrap text-slate-600">{formatoFecha(p.fecha)}</td>
                   <td className="font-medium text-slate-800">{nombreCompleto(p.student)}</td>
-                  <td className="capitalize text-slate-600">{formatoPeriodo(p.periodoCubierto)}</td>
+                  <td className="text-slate-600">
+                    <Badge tono={p.tipo === 'MENSUALIDAD' ? 'neutro' : 'violeta'}>
+                      {ETIQUETAS_TIPO_PAGO[p.tipo] ?? p.tipo}
+                    </Badge>
+                    <span className="mt-0.5 block text-xs capitalize text-slate-400">
+                      {p.tipo === 'MENSUALIDAD'
+                        ? formatoPeriodo(p.periodoCubierto)
+                        : (p.clase?.nombre ?? p.module?.nombre ?? p.course?.nombre ?? '—')}
+                    </span>
+                  </td>
                   <td className="text-slate-600">{ETIQUETAS_METODO[p.metodoPago]}</td>
                   <td className="text-right font-semibold text-emerald-600">{formatoMoneda(p.monto)}</td>
                   <td className="text-right">
@@ -380,6 +482,7 @@ function Ingresos() {
         <FormularioPago
           valorInicial={modal.valorInicial}
           estudiantes={estudiantesResp?.items ?? []}
+          cursos={cursos ?? []}
           onCerrar={() => setModal(null)}
           onGuardado={() => {
             setModal(null);

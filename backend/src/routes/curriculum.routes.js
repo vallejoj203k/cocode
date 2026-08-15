@@ -5,7 +5,7 @@ import { ApiError, asyncHandler } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { cursosVisibles } from '../services/access.service.js';
+import { cursosVisibles, marcarClasesAccesibles, puedeVerClase } from '../services/access.service.js';
 
 const router = Router();
 
@@ -150,7 +150,9 @@ router.get(
         _count: { select: { clases: true } },
       },
     });
-    res.json(toJSON(modules));
+
+    // Las clases no compradas viajan sin contenido y marcadas con `accesible`.
+    res.json(toJSON(await marcarClasesAccesibles(req.user, modules)));
   }),
 );
 
@@ -223,6 +225,9 @@ router.get(
     });
     if (!clase) throw ApiError.notFound('Clase no encontrada');
     await assertPuedeVerCurso(req.user, clase.module.courseId);
+    if (!(await puedeVerClase(req.user, clase))) {
+      throw ApiError.forbidden('Esta clase no esta incluida en lo que tienes habilitado');
+    }
     res.json(toJSON(clase));
   }),
 );

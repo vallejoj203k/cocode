@@ -75,6 +75,27 @@ export const ETIQUETAS_METODO = {
   OTRO: 'Otro',
 };
 
+export const ETIQUETAS_TIPO_PAGO = {
+  MENSUALIDAD: 'Mensualidad',
+  CURSO_COMPLETO: 'Curso completo',
+  MODULO: 'Módulo suelto',
+  CLASE: 'Clase suelta',
+};
+
+export const ETIQUETAS_ESTADO_PAGO = {
+  AL_DIA: 'Al día',
+  EN_GRACIA: 'Por vencer',
+  VENCIDO: 'Pago pendiente',
+  SIN_MENSUALIDAD: 'Sin mensualidad',
+};
+
+export const TONO_ESTADO_PAGO = {
+  AL_DIA: 'verde',
+  EN_GRACIA: 'ambar',
+  VENCIDO: 'rojo',
+  SIN_MENSUALIDAD: 'neutro',
+};
+
 export const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
 
 export const capitalizar = (texto) =>

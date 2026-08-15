@@ -46,6 +46,15 @@ enum PaymentMethod {
   OTRO
 }
 
+/// Que compra un pago. La escuela vende la mensualidad recurrente, pero tambien
+/// el curso completo, un modulo suelto o una clase suelta.
+enum PaymentType {
+  MENSUALIDAD
+  CURSO_COMPLETO
+  MODULO
+  CLASE
+}
+
 enum ExpenseCategory {
   PLATAFORMA
   MATERIALES
@@ -79,7 +88,7 @@ model User {
   sugerencias          Suggestion[]    @relation("SuggestionAuthor")
   sugerenciasAtendidas Suggestion[]    @relation("SuggestionHandler")
   pagosRegistrados     Payment[]       @relation("PaymentRecorder")
-  accesosConcedidos    StudentCourse[] @relation("CourseAccessGranter")
+  accesosConcedidos    StudentAccess[] @relation("CourseAccessGranter")
   gastosRegistrados    Expense[]       @relation("ExpenseRecorder")
 
   @@index([rol])
@@ -108,33 +117,46 @@ model Student {
   inscripciones StudentGroup[]
   asistencias   Attendance[]
   pagos         Payment[]
-  accesos       StudentCourse[]
+  accesos       StudentAccess[]
 
   @@index([userId])
   @@index([activo])
   @@map("students")
 }
 
-/// Curso al que el admin le dio acceso a un estudiante (normalmente porque lo
-/// pago). El acceso efectivo es esta lista UNIDA a los cursos de los grupos
-/// donde esta inscrito: asi nunca ocurre que este en un grupo y no pueda ver el
+/// Lo que un estudiante tiene habilitado: un curso completo, un modulo o una
+/// clase suelta. Se llena exactamente uno de los tres.
+///
+/// El acceso efectivo es esta lista UNIDA a los cursos de los grupos donde esta
+/// inscrito, para que nunca ocurra que este en un grupo y no pueda ver el
 /// curriculo de ese mismo curso.
-model StudentCourse {
+model StudentAccess {
   id          String   @id @default(cuid())
   concedidoEn DateTime @default(now())
   nota        String?
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  courseId  String
-  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId String?
+  module   Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  classId  String?
+  clase    Class?  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  /// Pago que lo origino, si vino de una compra y no de una concesion manual.
+  origenPagoId String?
+  origenPago   Payment? @relation(fields: [origenPagoId], references: [id], onDelete: SetNull)
 
   concedidoPorId String?
   concedidoPor   User?   @relation("CourseAccessGranter", fields: [concedidoPorId], references: [id], onDelete: SetNull)
 
   @@unique([studentId, courseId])
-  @@index([courseId])
-  @@map("student_courses")
+  @@unique([studentId, moduleId])
+  @@unique([studentId, classId])
+  @@index([studentId])
+  @@map("student_access")
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +231,8 @@ model Course {
 
   modulos Module[]
   grupos  Group[]
-  accesos StudentCourse[]
+  accesos StudentAccess[]
+  pagos   Payment[]
 
   @@index([orden])
   @@map("courses")
@@ -230,7 +253,9 @@ model Module {
 
   // El curso define 4 clases por modulo, pero el modelo no lo fuerza para
   // poder flexibilizarlo a futuro.
-  clases Class[]
+  clases  Class[]
+  accesos StudentAccess[]
+  pagos   Payment[]
 
   // La numeracion es por curso: cada curso tiene su propio modulo 1.
   @@unique([courseId, numero])
@@ -254,6 +279,8 @@ model Class {
   module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   progreso GroupProgress[]
+  accesos  StudentAccess[]
+  pagos    Payment[]
 
   @@unique([moduleId, numeroClase])
   @@index([moduleId])
@@ -333,8 +360,10 @@ model Payment {
   monto           Decimal       @db.Decimal(12, 2)
   fecha           DateTime
   metodoPago      PaymentMethod @default(TRANSFERENCIA)
-  /// Periodo que cubre el pago, formato "YYYY-MM".
-  periodoCubierto String
+  tipo            PaymentType   @default(MENSUALIDAD)
+  /// Periodo que cubre el pago, formato "YYYY-MM". Solo aplica a MENSUALIDAD:
+  /// una clase o un curso completo no se renuevan cada mes.
+  periodoCubierto String?
   concepto        String?
   nota            String?
   createdAt       DateTime      @default(now())
@@ -342,6 +371,17 @@ model Payment {
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Que habilita el pago. Se llena el que corresponde al `tipo`; una
+  // MENSUALIDAD puede no apuntar a nada y renovar lo que el estudiante ya tiene.
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  moduleId String?
+  module   Module? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  classId  String?
+  clase    Class?  @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  accesos StudentAccess[]
 
   registradoPorId String?
   registradoPor   User?   @relation("PaymentRecorder", fields: [registradoPorId], references: [id], onDelete: SetNull)
