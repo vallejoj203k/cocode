@@ -180,6 +180,17 @@ Al crear una cuenta con rol Estudiante, el formulario pide en el mismo paso el n
 al menos un curso; sin curso no deja guardar. Después se añaden o quitan desde **Usuarios →
 Editar** (cursos de cada hijo) o desde **Estudiantes → Editar**.
 
+#### Habilitar un curso y asignar un grupo son dos cosas distintas
+
+- **Habilitar el curso** le da al niño el material: aparece en su Currículo y puede leer el plan
+  de clases completo.
+- **Asignar un grupo** le pone horario, tutor, enlace de videollamada y avance.
+
+Lo normal es habilitar el curso primero y meter al niño en un grupo cuando haya cupo, así que el
+panel de Inicio muestra los cursos habilitados aunque todavía no tengan grupo, con una nota de que
+falta asignarlo y un enlace al plan de clases. La ficha del niño (**Estudiantes → ver detalle**)
+separa las dos cosas en dos tarjetas: "Cursos habilitados" y "Grupos".
+
 ### Varios cursos en paralelo
 
 `Course` es el programa completo (Python, Scratch, robótica…). Cada curso tiene su propio

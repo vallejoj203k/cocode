@@ -14,6 +14,7 @@ import {
   porcentajeAvance as avance,
   totalClasesPorCurso,
 } from '../services/curriculum.service.js';
+import { accesosDeEstudiante } from '../services/access.service.js';
 
 const router = Router();
 router.use(authenticate);
@@ -187,7 +188,7 @@ async function dashboardEstudiante(userId) {
     students.map(async (s) => {
       // Un estudiante puede llevar varios cursos a la vez: cada uno tiene su
       // propio avance, medido contra las clases de ese curso.
-      const cursos = await Promise.all(
+      const inscritos = await Promise.all(
         s.inscripciones.map(async (i) => {
           const progreso = await prisma.groupProgress.findMany({
             where: { groupId: i.groupId, estado: 'DICTADA' },
@@ -199,6 +200,7 @@ async function dashboardEstudiante(userId) {
           return {
             grupoId: i.group.id,
             grupoNombre: i.group.nombre,
+            cursoId: i.group.course.id,
             cursoNombre: i.group.course.nombre,
             diaSemana: i.group.diaSemana,
             hora: i.group.hora,
@@ -219,6 +221,26 @@ async function dashboardEstudiante(userId) {
         }),
       );
 
+      // Un curso habilitado por el admin (o comprado) cuenta aunque todavia no
+      // haya grupo: el nino ya puede estudiar su plan de clases. Antes solo se
+      // listaban los grupos, asi que un curso recien asignado no aparecia por
+      // ningun lado y el panel decia que no estaba inscrito en nada.
+      const { cursos: conAcceso, cursosParciales } = await accesosDeEstudiante(s.id);
+      const inscritoEn = new Set(s.inscripciones.map((i) => i.group.courseId));
+      const sinGrupoIds = [...new Set([...conAcceso, ...cursosParciales])].filter(
+        (id) => !inscritoEn.has(id),
+      );
+
+      const sinGrupo = sinGrupoIds.length
+        ? (
+            await prisma.course.findMany({
+              where: { id: { in: sinGrupoIds }, activo: true },
+              orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
+              select: { id: true, nombre: true },
+            })
+          ).map((c) => ({ cursoId: c.id, cursoNombre: c.nombre, sinGrupo: true }))
+        : [];
+
       const registradas = s.asistencias.length;
       const presentes = s.asistencias.filter((a) => a.asistio).length;
       // Un pago vencido avisa, no bloquea: el nino sigue viendo su curso.
@@ -228,7 +250,7 @@ async function dashboardEstudiante(userId) {
         id: s.id,
         nombre: [s.nombre, s.apellido].filter(Boolean).join(' '),
         pago,
-        cursos,
+        cursos: [...inscritos, ...sinGrupo],
         asistencia: {
           registradas,
           presentes,
