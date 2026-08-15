@@ -353,6 +353,10 @@ una sola URL, sin CORS y sin variables cruzadas entre servicios.
 En el proyecto, **+ New → Database → PostgreSQL**. Sin esto el servicio no arranca:
 `DATABASE_URL` es obligatoria y el backend falla al iniciar.
 
+> **Si borras y vuelves a crear la base**, el backend queda apuntando al servicio anterior y
+> `DATABASE_URL` se resuelve como cadena vacía. El arranque lo detecta y lo explica en el log;
+> la solución está en [Si borraste y recreaste la base de datos](#si-borraste-y-recreaste-la-base-de-datos).
+
 ### 2. Servicio web
 
 **+ New → GitHub Repo** y elige este repositorio.
@@ -423,6 +427,36 @@ ambas después de usarlas.
 
 **Nunca borra el currículo ni las cuentas de administrador.** Los cursos que hayas creado tú se
 eliminan desde Currículo → Eliminar curso.
+
+### Si borraste y recreaste la base de datos
+
+El log muestra un error de Prisma que parece del esquema:
+
+```
+error: Error validating datasource `db`: You must provide a nonempty URL.
+The environment variable `DATABASE_URL` resolved to an empty string.
+  -->  prisma/schema.prisma:10
+```
+
+El esquema no tiene nada malo. Al borrar la base, el backend conservó la **referencia** al
+servicio que ya no existe, y Railway la resuelve como cadena vacía en lugar de avisar. Es la
+misma razón por la que no aparece la flecha entre los dos servicios en el lienzo: sin
+referencia válida no hay flecha que dibujar.
+
+1. Servicio del **backend** → pestaña **Variables**.
+2. Borra la `DATABASE_URL` que tenga.
+3. **Add Variable Reference** → servicio Postgres actual → `DATABASE_URL`. Tiene que ser una
+   referencia, no un texto pegado a mano: al recrear la base, el nombre del servicio suele
+   cambiar (`Postgres`, `Postgres-a1b2`…) y una referencia vieja apunta a la nada.
+4. Redespliega. **Si la flecha no aparece, la referencia no quedó bien**; es la forma más rápida
+   de comprobarlo sin leer logs.
+
+El arranque comprueba `DATABASE_URL` antes de lanzar Prisma (`prisma/preflight.js`) y, si falta
+o llega vacía, imprime estos mismos pasos en lugar del error de esquema.
+
+**La base nueva está vacía**, así que también hay que volver a sembrarla: `SEED_ON_START=true`
+con `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD`, y `SEED_DEMO=false` si no quieres datos de
+ejemplo. Las cuentas, los niños y los pagos de la base anterior **no se recuperan**.
 
 ### Una cuenta de estudiante que "no ve nada"
 
