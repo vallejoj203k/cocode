@@ -322,14 +322,24 @@ export default function Estudiantes() {
                     {s.acudienteNombre ?? '—'}
                     {s.acudienteTelefono && <span className="block text-xs text-slate-400">{s.acudienteTelefono}</span>}
                   </td>
-                  {/* Sin cuenta de acceso nadie puede entrar a ver sus cursos:
-                      no es un dato neutro, es algo que falta por hacer. */}
+                  {/* Sin cuenta de acceso nadie puede entrar a ver sus cursos.
+                      No es un dato neutro sino algo que falta por hacer, asi que
+                      se arregla desde aqui mismo y no mandando al admin a buscar
+                      otra pantalla. */}
                   <td className="text-xs text-slate-500">
-                    {s.user?.email ?? (
-                      <span title="Nadie puede entrar a ver los cursos de este niño">
+                    {s.user?.email ??
+                      (esAdmin ? (
+                        <button
+                          type="button"
+                          className="btn bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200"
+                          onClick={() => setModal({ valorInicial: s })}
+                          title="Nadie puede entrar a ver los cursos de este niño"
+                        >
+                          Sin cuenta · vincular
+                        </button>
+                      ) : (
                         <Badge tono="ambar">Sin cuenta</Badge>
-                      </span>
-                    )}
+                      ))}
                   </td>
                   {esAdmin && (
                     <td className="text-right">

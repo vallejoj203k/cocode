@@ -6,7 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "prisma migrate deploy && node prisma/bootstrap.js && node src/server.js",
+    "start": "node prisma/preflight.js && prisma migrate deploy && node prisma/bootstrap.js && node src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
