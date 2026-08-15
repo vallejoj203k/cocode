@@ -317,12 +317,28 @@ function InicioEstudiante({ data }) {
 
           {e.cursos.length === 0 ? (
             <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
-              Todavía no está inscrito en ningún curso.
+              Todavía no tiene ningún curso habilitado. Pídeselo al administrador del curso.
             </p>
           ) : (
             /* Un bloque por curso: cada uno avanza a su propio ritmo. */
             <div className="mt-5 space-y-4">
-              {e.cursos.map((c) => (
+              {e.cursos.map((c) =>
+                /* Curso habilitado al que aun no le han asignado grupo: no hay
+                   horario, tutor ni avance que mostrar, pero el plan de clases
+                   ya se puede leer. */
+                c.sinGrupo ? (
+                  <div key={c.cursoId} className="rounded-lg border border-slate-200 p-4">
+                    <p className="font-semibold text-slate-800">{c.cursoNombre}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Ya tienes este curso habilitado. Todavía no te han asignado un grupo, así que
+                      aún no hay horario ni videollamada; mientras tanto puedes ir leyendo el plan
+                      de clases.
+                    </p>
+                    <Link to={`/curriculo/${c.cursoId}`} className="btn-secondary mt-3 text-xs">
+                      Ver el plan de clases
+                    </Link>
+                  </div>
+                ) : (
                 <div key={c.grupoId} className="rounded-lg border border-slate-200 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -368,7 +384,8 @@ function InicioEstudiante({ data }) {
                     )}
                   </p>
                 </div>
-              ))}
+                ),
+              )}
             </div>
           )}
         </div>

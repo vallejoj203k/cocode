@@ -12,6 +12,17 @@ export default function EstudianteDetalle() {
 
   const { resumen, asistencias } = estudiante;
 
+  // Los cursos que puede estudiar: los que le habilitaron mas los de sus grupos,
+  // porque estar inscrito ya implica el curso completo.
+  const cursosHabilitados = [
+    ...new Set([
+      ...(estudiante.accesos ?? []).filter((a) => a.course).map((a) => a.course.nombre),
+      ...estudiante.inscripciones
+        .filter((i) => i.estado === 'ACTIVO' && i.group.course)
+        .map((i) => i.group.course.nombre),
+    ]),
+  ];
+
   return (
     <>
       <EncabezadoPagina
@@ -30,7 +41,7 @@ export default function EstudianteDetalle() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tarjeta
           titulo="Asistencia"
           valor={resumen.porcentajeAsistencia === null ? '—' : `${resumen.porcentajeAsistencia}%`}
@@ -50,6 +61,16 @@ export default function EstudianteDetalle() {
           }
           icono="👥"
           tono="violeta"
+        />
+        {/* Tener el curso habilitado y estar en un grupo son cosas distintas:
+            lo primero da acceso al material, lo segundo pone horario y tutor.
+            Se muestran aparte para no confundir "sin grupo" con "sin curso". */}
+        <Tarjeta
+          titulo="Cursos habilitados"
+          valor={cursosHabilitados.length}
+          detalle={cursosHabilitados.join(' · ') || 'Sin curso habilitado'}
+          icono="📚"
+          tono="azul"
         />
       </div>
 

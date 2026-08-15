@@ -94,7 +94,14 @@ router.get(
         inscripciones: {
           include: {
             group: {
-              select: { id: true, nombre: true, diaSemana: true, hora: true, courseId: true },
+              select: {
+                id: true,
+                nombre: true,
+                diaSemana: true,
+                hora: true,
+                courseId: true,
+                course: { select: { id: true, nombre: true } },
+              },
             },
           },
         },
