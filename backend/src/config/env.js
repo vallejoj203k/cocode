@@ -43,6 +43,14 @@ if (faltantes.length > 0) {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  // Railway inyecta estos datos del commit desplegado. Sirven para saber de un
+  // vistazo si un merge llego de verdad al servidor.
+  version: {
+    commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    mensaje: process.env.RAILWAY_GIT_COMMIT_MESSAGE ?? null,
+    rama: process.env.RAILWAY_GIT_BRANCH ?? null,
+    desplegadoEn: process.env.RAILWAY_DEPLOYMENT_ID ? new Date().toISOString() : null,
+  },
   isProd,
   port: Number(process.env.PORT ?? 4000),
   // Railway enruta el trafico al contenedor, hay que escuchar en todas las

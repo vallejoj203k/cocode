@@ -32,7 +32,7 @@ export function createApp() {
   // healthcheck del despliegue, asi que no depende de la base: una base lenta o
   // caida no debe tumbar un despliegue por lo demas correcto.
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', uptime: process.uptime() });
+    res.json({ status: 'ok', uptime: process.uptime(), version: env.version });
   });
 
   // Readiness: comprueba de verdad la conexion a la base.
