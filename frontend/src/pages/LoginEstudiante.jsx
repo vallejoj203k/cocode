@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Spinner } from '../components/ui.jsx';
 import Icono from '../components/Icono.jsx';
+import Fondo from '../components/Fondo.jsx';
 
 /**
  * Entrada de los estudiantes. La usa el propio nino (8-10 anos), asi que todo
@@ -48,8 +49,9 @@ export default function LoginEstudiante() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-acento-400/30 via-marca-50 to-marca-200 px-4 py-10">
-      <div className="w-full max-w-lg">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-acento-400/30 via-marca-50 to-marca-200 px-4 py-10">
+      <Fondo />
+      <div className="relative w-full max-w-lg">
         <div className="mb-8 text-center">
           <img src="/logo.svg" alt="Python Kids" width="88" height="88" className="mx-auto rounded-2xl" />
           <h1 className="mt-4 text-4xl font-extrabold text-marca-800">¡Hola!</h1>
