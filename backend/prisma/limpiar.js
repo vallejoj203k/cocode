@@ -34,6 +34,16 @@ const ESTUDIANTES_DEMO = [
   ['Tomas', 'Rojas'],
 ];
 const GRUPOS_DEMO = ['Grupo Serpientes', 'Grupo Pitones'];
+/**
+ * Gastos que crea el seed. Se identifican por su descripcion porque no tienen
+ * ninguna marca de "esto es de ejemplo": se buscan los mismos textos que
+ * escribe seed.js, y "Honorarios tutores" lleva el mes detras.
+ */
+const GASTOS_DEMO = [
+  { descripcion: { startsWith: 'Honorarios tutores' }, categoria: 'PAGO_TUTORES' },
+  { descripcion: 'Hosting y dominio', proveedor: 'Railway' },
+  { descripcion: 'Cuadernillos y stickers', categoria: 'MATERIALES' },
+];
 
 /** Que se borraria en modo demo. */
 async function inventarioDemo() {
@@ -50,12 +60,13 @@ async function inventarioDemo() {
   ]);
 
   const studentIds = estudiantes.map((e) => e.id);
-  const [pagos, sugerencias] = await Promise.all([
+  const [pagos, sugerencias, gastos] = await Promise.all([
     prisma.payment.count({ where: { studentId: { in: studentIds } } }),
     prisma.suggestion.count({ where: { userId: { in: usuarios.map((u) => u.id) } } }),
+    prisma.expense.count({ where: { OR: GASTOS_DEMO } }),
   ]);
 
-  return { usuarios, estudiantes, grupos, pagos, sugerencias, gastos: 0 };
+  return { usuarios, estudiantes, grupos, pagos, sugerencias, gastos };
 }
 
 /** Que se borraria en modo total. */
@@ -94,7 +105,9 @@ async function borrar(inv, modo) {
     ),
     prisma.groupProgress.deleteMany(modo === 'todo' ? {} : { where: { groupId: { in: groupIds } } }),
     prisma.payment.deleteMany(modo === 'todo' ? {} : { where: { studentId: { in: studentIds } } }),
-    ...(modo === 'todo' ? [prisma.expense.deleteMany({})] : []),
+    // Los gastos de ejemplo no cuelgan de ningun estudiante, asi que hay que
+    // buscarlos por su descripcion o quedarian en el balance para siempre.
+    prisma.expense.deleteMany(modo === 'todo' ? {} : { where: { OR: GASTOS_DEMO } }),
     prisma.suggestion.deleteMany(modo === 'todo' ? {} : { where: { userId: { in: userIds } } }),
     prisma.studentAccess.deleteMany(
       modo === 'todo' ? {} : { where: { studentId: { in: studentIds } } },
@@ -108,27 +121,46 @@ async function borrar(inv, modo) {
   ]);
 }
 
-export async function limpiar({ modo = 'demo', confirmar = false } = {}) {
+/** Resumen de lo que hay (o habia) para borrar, en numeros. */
+const resumir = (inv) => ({
+  estudiantes: inv.estudiantes.length,
+  grupos: inv.grupos.length,
+  cuentas: inv.usuarios.length,
+  pagos: inv.pagos,
+  gastos: inv.gastos,
+  sugerencias: inv.sugerencias,
+});
+
+/**
+ * Enumera lo que se borraria y, si `confirmar`, lo borra. Devuelve el resumen
+ * para que quien la llame pueda mostrarlo; por linea de comandos ademas se
+ * imprime con detalle.
+ *
+ * `cerrarConexion` es false cuando la llama el servidor, que comparte el mismo
+ * cliente de Prisma y lo necesita vivo despues.
+ */
+export async function limpiar({ modo = 'demo', confirmar = false, silencioso = false, cerrarConexion = true } = {}) {
   try {
     const inv = modo === 'todo' ? await inventarioTodo() : await inventarioDemo();
-    describir(inv, modo);
+    if (!silencioso) describir(inv, modo);
 
-    const nada =
-      inv.estudiantes.length + inv.grupos.length + inv.usuarios.length + inv.pagos + inv.gastos === 0;
+    const resumen = resumir(inv);
+    const nada = Object.values(resumen).every((n) => n === 0);
     if (nada) {
-      console.log('\nNo hay nada que borrar.');
-      return;
+      if (!silencioso) console.log('\nNo hay nada que borrar.');
+      return { borrado: false, motivo: 'nada', resumen };
     }
 
     if (!confirmar) {
-      console.log('\nSIMULACION: no se borro nada. Repite con --confirmar para ejecutarlo.');
-      return;
+      if (!silencioso) console.log('\nSIMULACION: no se borro nada. Repite con --confirmar para ejecutarlo.');
+      return { borrado: false, motivo: 'simulacion', resumen };
     }
 
     await borrar(inv, modo);
-    console.log('\nListo: los datos indicados fueron borrados.');
+    if (!silencioso) console.log('\nListo: los datos indicados fueron borrados.');
+    return { borrado: true, resumen };
   } finally {
-    await prisma.$disconnect();
+    if (cerrarConexion) await prisma.$disconnect();
   }
 }
 

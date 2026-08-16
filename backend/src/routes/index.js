@@ -10,6 +10,7 @@ import financeRoutes from './finance.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import leadsRoutes from './leads.routes.js';
 import publicRoutes from './public.routes.js';
+import mantenimientoRoutes from './mantenimiento.routes.js';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.get('/', (_req, res) => {
       '/api/finance',
       '/api/dashboard',
       '/api/leads',
+      '/api/mantenimiento',
       '/api/public (sin sesion)',
     ],
   });
@@ -39,6 +41,7 @@ router.use('/public', publicRoutes);
 
 router.use('/auth', authRoutes);
 router.use('/leads', leadsRoutes);
+router.use('/mantenimiento', mantenimientoRoutes);
 router.use('/users', usersRoutes);
 router.use('/students', studentsRoutes);
 router.use('/groups', groupsRoutes);
