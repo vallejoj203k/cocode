@@ -192,7 +192,7 @@ export default function Sugerencias() {
         <EstadoVacio
           titulo="No hay sugerencias"
           descripcion={esAdmin ? 'Cuando alguien escriba, aparecerá aquí.' : 'Todavía no has enviado ninguna.'}
-          icono="💡"
+          icono="sugerencias"
         />
       ) : (
         <div className="space-y-3">

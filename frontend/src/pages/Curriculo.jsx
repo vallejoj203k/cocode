@@ -12,6 +12,7 @@ import {
   MensajeError,
 } from '../components/ui.jsx';
 import { FormularioCurso } from '../components/curriculo/index.jsx';
+import Icono from '../components/Icono.jsx';
 
 /**
  * Catalogo de cursos. El plan de cada uno (modulos y clases) vive en su propia
@@ -76,7 +77,7 @@ export default function Curriculo() {
               ? 'Crea el primer curso para empezar a construir su plan de módulos y clases.'
               : 'Cuando el administrador te habilite un curso aparecerá aquí.'
           }
-          icono="📚"
+          icono="curriculo"
           accion={
             esAdmin && (
               <button type="button" className="btn-primary" onClick={() => setModalCurso({ valorInicial: null })}>
@@ -90,8 +91,8 @@ export default function Curriculo() {
           {cursos.map((curso) => (
             <article key={curso.id} className="card flex flex-col p-5">
               <div className="flex items-start justify-between gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-marca-500 text-xl">
-                  📚
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-marca-500 text-white">
+                  <Icono nombre="curriculo" size={22} />
                 </span>
                 {!curso.activo && <Badge tono="rojo">Archivado</Badge>}
               </div>

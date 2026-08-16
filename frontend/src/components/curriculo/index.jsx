@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { api } from '../../api/client.js';
 import { Badge, Campo, MensajeError, Modal } from '../ui.jsx';
+import Icono from '../Icono.jsx';
 
 const MODULO_VACIO = { numero: '', nombre: '', objetivo: '', descripcion: '' };
 const CLASE_VACIA = { numeroClase: '', nombre: '', objetivo: '', contenido: '', conceptosClave: '', recursosUrl: '' };
@@ -313,8 +314,8 @@ export function Clase({ clase, esAdmin, onEditar, onEliminar }) {
               Esta clase no está incluida en lo que tienes. Pídesela a tu acudiente.
             </span>
           </span>
-          <span title="Clase bloqueada" aria-label="Clase bloqueada">
-            🔒
+          <span title="Clase bloqueada" className="text-slate-400">
+            <Icono nombre="bloqueado" size={18} />
           </span>
         </div>
       </li>
@@ -337,23 +338,24 @@ export function Clase({ clase, esAdmin, onEditar, onEliminar }) {
             <span className="block font-medium text-slate-800">{clase.nombre}</span>
             <span className="block text-xs text-slate-500">{clase.objetivo}</span>
           </span>
-          <span className="text-slate-400" aria-hidden="true">
-            {abierta ? '▾' : '▸'}
+          <span className="mt-1 text-slate-400">
+            <Icono nombre={abierta ? 'plegar' : 'desplegar'} size={16} />
           </span>
         </button>
 
         {esAdmin && (
           <div className="flex gap-1">
-            <button type="button" onClick={onEditar} className="btn-ghost px-2 py-1 text-xs" title="Editar clase">
-              ✏️
+            <button type="button" onClick={onEditar} className="btn-ghost px-2 py-1" title="Editar clase" aria-label="Editar clase">
+              <Icono nombre="editar" size={15} />
             </button>
             <button
               type="button"
               onClick={onEliminar}
-              className="btn px-2 py-1 text-xs text-rose-600 hover:bg-rose-50"
+              className="btn px-2 py-1 text-rose-600 hover:bg-rose-50"
               title="Eliminar clase"
+              aria-label="Eliminar clase"
             >
-              🗑️
+              <Icono nombre="eliminar" size={15} />
             </button>
           </div>
         )}

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useApi.js';
 import { Badge, Campo, Cargando, EncabezadoPagina, EstadoVacio, MensajeError, Modal } from '../components/ui.jsx';
 import { DIAS_SEMANA, aInputFecha, capitalizar, formatoFecha, hoyISO } from '../lib/format.js';
+import Icono from '../components/Icono.jsx';
 
 function FormularioGrupo({ valorInicial, tutores, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
@@ -221,7 +222,7 @@ export default function Grupos() {
               ? 'Crea un grupo, asígnale un tutor e inscribe estudiantes para empezar.'
               : 'Cuando el administrador te asigne un grupo aparecerá aquí.'
           }
-          icono="👥"
+          icono="grupos"
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -280,9 +281,10 @@ export default function Grupos() {
                   href={g.enlaceReunion}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn mt-4 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                  className="btn mt-4 w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
                 >
-                  🎥 Entrar a la clase
+                  <Icono nombre="clase" size={18} />
+                  Entrar a la clase
                 </a>
               )}
 

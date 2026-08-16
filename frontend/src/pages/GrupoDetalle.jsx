@@ -23,6 +23,7 @@ import {
   hoyISO,
   nombreCompleto,
 } from '../lib/format.js';
+import Icono from '../components/Icono.jsx';
 
 /** Hoja de asistencia de una clase concreta. */
 function ModalAsistencia({ groupId, clase, puedeEditar, onCerrar, onGuardado }) {
@@ -69,7 +70,7 @@ function ModalAsistencia({ groupId, clase, puedeEditar, onCerrar, onGuardado }) 
             <EstadoVacio
               titulo="El grupo no tiene estudiantes activos"
               descripcion="Inscribe estudiantes en el grupo para poder tomar asistencia."
-              icono="🧒"
+              icono="estudiantes"
             />
           ) : (
             <>
@@ -258,7 +259,7 @@ function PestanaAvance({ groupId, puedeEditar }) {
                 </span>
                 {dictadas === m.clases.length && m.clases.length > 0 && <Badge tono="verde">Completo</Badge>}
                 <span className="text-slate-400" aria-hidden="true">
-                  {abierto ? '▾' : '▸'}
+                  <Icono nombre={abierto ? 'plegar' : 'desplegar'} size={16} />
                 </span>
               </button>
 
@@ -373,7 +374,7 @@ function PestanaEstudiantes({ grupo, esAdmin, onCambio }) {
         <EstadoVacio
           titulo="El grupo no tiene estudiantes"
           descripcion={esAdmin ? 'Inscribe estudiantes para empezar a tomar asistencia.' : 'Aún no hay inscritos.'}
-          icono="🧒"
+          icono="estudiantes"
         />
       ) : (
         <div className="card overflow-x-auto">
@@ -531,11 +532,13 @@ export default function GrupoDetalle() {
                 rel="noreferrer"
                 className="btn bg-emerald-600 text-white hover:bg-emerald-700"
               >
-                🎥 Entrar a la clase
+                <Icono nombre="clase" size={18} />
+                Entrar a la clase
               </a>
             )}
-            <Link to="/grupos" className="btn-secondary">
-              ← Volver
+            <Link to="/grupos" className="btn-secondary gap-1.5">
+              <Icono nombre="volver" size={16} />
+              Volver
             </Link>
           </>
         }

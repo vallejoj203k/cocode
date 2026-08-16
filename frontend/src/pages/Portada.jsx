@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useFetch } from '../hooks/useApi.js';
 import { Campo, Cargando, MensajeError } from '../components/ui.jsx';
+import Icono from '../components/Icono.jsx';
+import Logo from '../components/Logo.jsx';
 
 const VACIO = {
   nombre: '',
@@ -53,13 +55,7 @@ export default function Portada() {
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐍</span>
-            <div>
-              <p className="font-bold text-slate-900">Python Kids</p>
-              <p className="text-xs text-slate-500">Programación para niños</p>
-            </div>
-          </div>
+          <Logo tamano={38} subtitulo="Programación para niños" />
           <Link to="/login" className="btn-secondary text-sm">
             Entrar
           </Link>
@@ -86,15 +82,25 @@ export default function Portada() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {(cursos ?? []).map((c) => (
                 <article key={c.id} className="card p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-marca-500 text-xl">
-                    📚
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-marca-500 text-white">
+                    <Icono nombre="curriculo" size={22} />
                   </span>
                   <h3 className="mt-3 font-bold text-slate-900">{c.nombre}</h3>
                   {c.descripcion && <p className="mt-1 text-sm text-slate-600">{c.descripcion}</p>}
-                  <dl className="mt-3 space-y-1 text-sm text-slate-500">
-                    {c.edadSugerida && <div>👦 Edad: {c.edadSugerida}</div>}
-                    {c.duracionMeses && <div>🗓️ Duración: {c.duracionMeses} meses</div>}
-                    <div>📘 {c.modulos} módulos</div>
+                  <dl className="mt-3 space-y-1.5 text-sm text-slate-500">
+                    {c.edadSugerida && (
+                      <div className="flex items-center gap-2">
+                        <Icono nombre="estudiantes" size={16} /> Edad: {c.edadSugerida}
+                      </div>
+                    )}
+                    {c.duracionMeses && (
+                      <div className="flex items-center gap-2">
+                        <Icono nombre="calendario" size={16} /> Duración: {c.duracionMeses} meses
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Icono nombre="curriculo" size={16} /> {c.modulos} módulos
+                    </div>
                   </dl>
                   <button
                     type="button"
@@ -114,7 +120,9 @@ export default function Portada() {
           <section id="formulario" className="lg:sticky lg:top-6 lg:self-start">
             {enviado ? (
               <div className="card p-6 text-center">
-                <span className="text-4xl">🎉</span>
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <Icono nombre="hecho" size={30} />
+                </span>
                 <h2 className="mt-3 text-xl font-bold text-slate-900">¡Gracias!</h2>
                 <p className="mt-2 text-sm text-slate-600">
                   Recibimos tus datos. Te llamaremos pronto al número que nos dejaste para contarte

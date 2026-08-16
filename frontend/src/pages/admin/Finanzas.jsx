@@ -50,13 +50,13 @@ function Balance() {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Tarjeta titulo="Ingresos (12 meses)" valor={formatoMoneda(totales.ingresos)} icono="📈" tono="verde" />
-        <Tarjeta titulo="Gastos (12 meses)" valor={formatoMoneda(totales.gastos)} icono="📉" tono="rojo" />
+        <Tarjeta titulo="Ingresos (12 meses)" valor={formatoMoneda(totales.ingresos)} icono="ingresos" tono="verde" />
+        <Tarjeta titulo="Gastos (12 meses)" valor={formatoMoneda(totales.gastos)} icono="gastos" tono="rojo" />
         <Tarjeta
           titulo="Balance"
           valor={formatoMoneda(totales.balance)}
           detalle={totales.balance >= 0 ? 'Resultado positivo' : 'Resultado negativo'}
-          icono="⚖️"
+          icono="balance"
           tono={totales.balance >= 0 ? 'verde' : 'rojo'}
         />
       </div>
@@ -422,7 +422,7 @@ function Ingresos() {
         <EstadoVacio
           titulo="Sin pagos registrados"
           descripcion="Registra el primer pago para empezar a llevar el control de ingresos."
-          icono="💰"
+          icono="finanzas"
         />
       ) : (
         <div className="card overflow-x-auto">
@@ -658,7 +658,7 @@ function Gastos() {
       {cargando ? (
         <Cargando />
       ) : gastos.length === 0 ? (
-        <EstadoVacio titulo="Sin gastos registrados" descripcion="Registra los gastos operativos del curso." icono="🧾" />
+        <EstadoVacio titulo="Sin gastos registrados" descripcion="Registra los gastos operativos del curso." icono="recibo" />
       ) : (
         <div className="card overflow-x-auto">
           <table className="table-base">
@@ -765,14 +765,14 @@ function Cartera() {
       {data && !cargando && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Tarjeta titulo="Al día" valor={data.resumen.alDia} icono="✅" tono="verde" />
-            <Tarjeta titulo="Pago parcial" valor={data.resumen.parcial} icono="🟡" tono="ambar" />
-            <Tarjeta titulo="Pendientes" valor={data.resumen.pendiente} icono="🔴" tono="rojo" />
+            <Tarjeta titulo="Al día" valor={data.resumen.alDia} icono="hecho" tono="verde" />
+            <Tarjeta titulo="Pago parcial" valor={data.resumen.parcial} icono="aviso" tono="ambar" />
+            <Tarjeta titulo="Pendientes" valor={data.resumen.pendiente} icono="pendiente" tono="rojo" />
             <Tarjeta
               titulo="Por recaudar"
               valor={formatoMoneda(data.resumen.porRecaudar)}
               detalle={`Recaudado: ${formatoMoneda(data.resumen.recaudado)}`}
-              icono="💵"
+              icono="dinero"
             />
           </div>
 

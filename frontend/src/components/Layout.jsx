@@ -2,22 +2,24 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ETIQUETAS_ROL } from '../lib/format.js';
+import Icono from './Icono.jsx';
+import Logo from './Logo.jsx';
 
 /** Menu lateral por rol: cada entrada declara quien puede verla. */
 const TODOS = ['ADMIN', 'TUTOR', 'VENDEDOR', 'ESTUDIANTE'];
 
 const NAVEGACION = [
-  { to: '/', etiqueta: 'Inicio', icono: '🏠', roles: TODOS, exact: true },
-  { to: '/interesados', etiqueta: 'Interesados', icono: '📇', roles: ['ADMIN', 'VENDEDOR'] },
-  { to: '/curriculo', etiqueta: 'Currículo', icono: '📚', roles: TODOS },
-  { to: '/grupos', etiqueta: 'Grupos', icono: '👥', roles: ['ADMIN', 'TUTOR'] },
-  { to: '/estudiantes', etiqueta: 'Estudiantes', icono: '🧒', roles: ['ADMIN', 'TUTOR', 'VENDEDOR'] },
-  { to: '/usuarios', etiqueta: 'Usuarios', icono: '🔑', roles: ['ADMIN'] },
+  { to: '/', etiqueta: 'Inicio', icono: 'inicio', roles: TODOS, exact: true },
+  { to: '/interesados', etiqueta: 'Interesados', icono: 'interesados', roles: ['ADMIN', 'VENDEDOR'] },
+  { to: '/curriculo', etiqueta: 'Currículo', icono: 'curriculo', roles: TODOS },
+  { to: '/grupos', etiqueta: 'Grupos', icono: 'grupos', roles: ['ADMIN', 'TUTOR'] },
+  { to: '/estudiantes', etiqueta: 'Estudiantes', icono: 'estudiantes', roles: ['ADMIN', 'TUTOR', 'VENDEDOR'] },
+  { to: '/usuarios', etiqueta: 'Usuarios', icono: 'usuarios', roles: ['ADMIN'] },
   // El vendedor entra a la misma pantalla, pero solo con la pestana de pagos.
-  { to: '/finanzas', etiqueta: 'Finanzas', icono: '💰', roles: ['ADMIN'] },
-  { to: '/finanzas', etiqueta: 'Pagos', icono: '💰', roles: ['VENDEDOR'] },
-  { to: '/sugerencias', etiqueta: 'Sugerencias', icono: '💡', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'] },
-  { to: '/mi-cuenta', etiqueta: 'Mi cuenta', icono: '⚙️', roles: TODOS },
+  { to: '/finanzas', etiqueta: 'Finanzas', icono: 'finanzas', roles: ['ADMIN'] },
+  { to: '/finanzas', etiqueta: 'Pagos', icono: 'finanzas', roles: ['VENDEDOR'] },
+  { to: '/sugerencias', etiqueta: 'Sugerencias', icono: 'sugerencias', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'] },
+  { to: '/mi-cuenta', etiqueta: 'Mi cuenta', icono: 'cuenta', roles: TODOS },
 ];
 
 function Enlaces({ rol, onNavegar }) {
@@ -35,7 +37,7 @@ function Enlaces({ rol, onNavegar }) {
             }`
           }
         >
-          <span aria-hidden="true">{item.icono}</span>
+          <Icono nombre={item.icono} size={18} />
           {item.etiqueta}
         </NavLink>
       ))}
@@ -64,9 +66,9 @@ export default function Layout() {
           aria-label="Abrir menu"
           aria-expanded={menuAbierto}
         >
-          ☰
+          <Icono nombre="menu" size={22} />
         </button>
-        <span className="font-bold text-marca-700">🐍 Python Kids</span>
+        <Logo tamano={28} />
         <button type="button" onClick={salir} className="text-sm font-medium text-slate-500">
           Salir
         </button>
@@ -81,8 +83,7 @@ export default function Layout() {
       {/* Menu lateral (escritorio) */}
       <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:min-h-screen lg:flex-col">
         <div className="border-b border-slate-200 px-5 py-5">
-          <p className="text-lg font-bold text-marca-700">🐍 Python Kids</p>
-          <p className="text-xs text-slate-500">Plataforma del curso</p>
+          <Logo tamano={36} subtitulo="Plataforma del curso" />
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <Enlaces rol={user.rol} />

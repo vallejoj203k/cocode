@@ -18,6 +18,7 @@ import {
   formatoMoneda,
   formatoPeriodo,
 } from '../lib/format.js';
+import Icono from '../components/Icono.jsx';
 
 /** Grafico de barras ingresos vs gastos, sin dependencias externas. */
 function GraficoBalance({ porMes }) {
@@ -121,27 +122,27 @@ function InicioAdmin({ data }) {
       <AvisosRevision revision={data.revision} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="🧒" />
-        <Tarjeta titulo="Grupos activos" valor={tarjetas.gruposActivos} icono="👥" tono="violeta" />
+        <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="estudiantes" />
+        <Tarjeta titulo="Grupos activos" valor={tarjetas.gruposActivos} icono="grupos" tono="violeta" />
         <Tarjeta
           titulo="Cursos"
           valor={tarjetas.cursos}
           detalle={`${tarjetas.modulos} módulos · ${tarjetas.totalClases} clases`}
-          icono="📚"
+          icono="curriculo"
           tono="ambar"
         />
         <Tarjeta
           titulo="Interesados nuevos"
           valor={tarjetas.interesadosNuevos ?? 0}
           detalle={tarjetas.interesadosNuevos ? 'Sin llamar todavía' : 'Todos atendidos'}
-          icono="📇"
+          icono="interesados"
           tono={tarjetas.interesadosNuevos ? 'rojo' : 'verde'}
         />
         <Tarjeta
           titulo="Sugerencias nuevas"
           valor={tarjetas.sugerenciasNuevas}
           detalle={tarjetas.sugerenciasNuevas ? 'Pendientes de revisar' : 'Todo al día'}
-          icono="💡"
+          icono="sugerencias"
           tono={tarjetas.sugerenciasNuevas ? 'rojo' : 'verde'}
         />
       </div>
@@ -200,7 +201,7 @@ function InicioAdmin({ data }) {
             <EstadoVacio
               titulo="Todavía no hay grupos"
               descripcion="Crea el primer grupo para empezar a registrar clases y asistencia."
-              icono="👥"
+              icono="grupos"
               accion={
                 <Link to="/grupos" className="btn-primary">
                   Ir a grupos
@@ -253,10 +254,10 @@ function InicioTutor({ data }) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tarjeta titulo="Mis grupos" valor={tarjetas.gruposAsignados} icono="👥" />
-        <Tarjeta titulo="Mis estudiantes" valor={tarjetas.estudiantes} icono="🧒" tono="violeta" />
-        <Tarjeta titulo="Clases dictadas" valor={tarjetas.clasesDictadas} icono="✅" tono="verde" />
-        <Tarjeta titulo="Cursos que dictas" valor={tarjetas.cursos} icono="📚" tono="ambar" />
+        <Tarjeta titulo="Mis grupos" valor={tarjetas.gruposAsignados} icono="grupos" />
+        <Tarjeta titulo="Mis estudiantes" valor={tarjetas.estudiantes} icono="estudiantes" tono="violeta" />
+        <Tarjeta titulo="Clases dictadas" valor={tarjetas.clasesDictadas} icono="hecho" tono="verde" />
+        <Tarjeta titulo="Cursos que dictas" valor={tarjetas.cursos} icono="curriculo" tono="ambar" />
       </div>
 
       <h2 className="mt-8 text-lg font-semibold text-slate-900">Mis grupos</h2>
@@ -265,7 +266,7 @@ function InicioTutor({ data }) {
           <EstadoVacio
             titulo="Aún no tienes grupos asignados"
             descripcion="Cuando el administrador te asigne un grupo aparecerá aquí."
-            icono="👥"
+            icono="grupos"
           />
         </div>
       ) : (
@@ -290,7 +291,8 @@ function InicioTutor({ data }) {
                       rel="noreferrer"
                       className="btn bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700"
                     >
-                      🎥 Entrar a la clase
+                      <Icono nombre="clase" size={18} />
+                      Entrar a la clase
                     </a>
                   )}
                   <Link to={`/grupos/${g.id}`} className="btn-ghost text-xs">
@@ -318,7 +320,7 @@ function InicioTutor({ data }) {
                 <div>
                   <dt className="inline font-medium text-slate-600">Próxima: </dt>
                   <dd className="inline">
-                    {g.proximaClase ? `M${g.proximaClase.modulo} · ${g.proximaClase.nombre}` : 'Curso completado 🎉'}
+                    {g.proximaClase ? `M${g.proximaClase.modulo} · ${g.proximaClase.nombre}` : 'Curso completado'}
                   </dd>
                 </div>
               </dl>
@@ -341,18 +343,18 @@ function InicioVendedor({ data }) {
           titulo="Sin llamar"
           valor={tarjetas.nuevos}
           detalle={tarjetas.nuevos ? 'Llámalos hoy' : 'Todos atendidos'}
-          icono="🔔"
+          icono="pendiente"
           tono={tarjetas.nuevos ? 'rojo' : 'verde'}
         />
-        <Tarjeta titulo="Contactados" valor={tarjetas.contactados} detalle="En seguimiento" icono="📞" tono="ambar" />
+        <Tarjeta titulo="Contactados" valor={tarjetas.contactados} detalle="En seguimiento" icono="telefono" tono="ambar" />
         <Tarjeta
           titulo="Inscritos este mes"
           valor={tarjetas.inscritosMes}
           detalle={`${tarjetas.inscritos} en total`}
-          icono="✅"
+          icono="hecho"
           tono="verde"
         />
-        <Tarjeta titulo="A tu cargo" valor={tarjetas.mios} detalle="Pendientes que atiendes tú" icono="🙋" />
+        <Tarjeta titulo="A tu cargo" valor={tarjetas.mios} detalle="Pendientes que atiendes tú" icono="aCargo" />
       </div>
 
       <h2 className="mt-8 text-lg font-semibold text-slate-900">Por llamar</h2>
@@ -361,7 +363,7 @@ function InicioVendedor({ data }) {
           <EstadoVacio
             titulo="No hay nadie esperando"
             descripcion="Cuando alguien deje sus datos en la página pública aparecerá aquí."
-            icono="📇"
+            icono="interesados"
           />
         </div>
       ) : (
@@ -378,8 +380,9 @@ function InicioVendedor({ data }) {
                 <Badge tono={p.estado === 'NUEVO' ? 'rojo' : 'ambar'}>
                   {p.estado === 'NUEVO' ? 'Sin llamar' : 'Contactado'}
                 </Badge>
-                <a href={`tel:${p.telefono}`} className="btn-secondary text-xs">
-                  📞 {p.telefono}
+                <a href={`tel:${p.telefono}`} className="btn-secondary gap-1.5 text-xs">
+                  <Icono nombre="telefono" size={15} />
+                  {p.telefono}
                 </a>
               </div>
             </div>
@@ -403,7 +406,7 @@ function InicioEstudiante({ data }) {
       <EstadoVacio
         titulo="Todavía no hay estudiantes vinculados a tu cuenta"
         descripcion="Comunícate con el administrador del curso para que vincule a tu hijo o hija con esta cuenta."
-        icono="🧒"
+        icono="estudiantes"
       />
     );
   }
@@ -486,9 +489,10 @@ function InicioEstudiante({ data }) {
                       href={c.enlaceReunion}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn mt-3 h-12 w-full bg-emerald-600 text-base text-white hover:bg-emerald-700"
+                      className="btn mt-3 h-12 w-full gap-2 bg-emerald-600 text-base text-white hover:bg-emerald-700"
                     >
-                      🎥 Entrar a mi clase
+                      <Icono nombre="clase" size={18} />
+                      Entrar a mi clase
                     </a>
                   ) : (
                     <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
@@ -539,7 +543,7 @@ export default function Inicio() {
   return (
     <>
       <EncabezadoPagina
-        titulo={`Hola, ${user.nombre.split(' ')[0]} 👋`}
+        titulo={`Hola, ${user.nombre.split(' ')[0]}`}
         descripcion={
           user.rol === 'ADMIN'
             ? 'Resumen general del curso y del negocio.'
