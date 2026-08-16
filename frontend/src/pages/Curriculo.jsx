@@ -52,10 +52,10 @@ export default function Curriculo() {
   return (
     <>
       <EncabezadoPagina
-        titulo="Currículo"
+        titulo="Cursos"
         descripcion={
           esAdmin
-            ? 'Los cursos que ofrece la escuela. Abre uno para ver y editar su plan de clases.'
+            ? 'Cada curso enseña un lenguaje distinto y tiene su propio plan de clases. Abre uno para verlo o editarlo.'
             : 'Tus cursos. Abre uno para ver sus módulos y clases.'
         }
         acciones={

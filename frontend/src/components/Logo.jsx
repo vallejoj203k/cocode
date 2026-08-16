@@ -1,3 +1,5 @@
+import { MARCA } from '../lib/marca.js';
+
 /**
  * La marca, en un solo sitio.
  *
@@ -23,13 +25,13 @@ export default function Logo({
     <span className={`flex items-center gap-2.5 lg:gap-3 ${className}`}>
       <img
         src="/logo.svg"
-        alt="Python Kids"
+        alt={MARCA}
         className="logo-img shrink-0 rounded-lg lg:rounded-xl"
         style={{ '--logo-sm': `${tamano}px`, '--logo-lg': `${escritorio}px` }}
       />
       {conNombre && (
         <span className="leading-tight">
-          <span className="block font-bold text-slate-900 lg:text-lg">Python Kids</span>
+          <span className="block font-bold text-slate-900 lg:text-lg">{MARCA}</span>
           {subtitulo && <span className="block text-xs text-slate-500 lg:text-sm">{subtitulo}</span>}
         </span>
       )}

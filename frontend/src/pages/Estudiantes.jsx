@@ -231,7 +231,7 @@ export default function Estudiantes() {
     <>
       <EncabezadoPagina
         titulo="Estudiantes"
-        descripcion={esAdmin ? 'Todos los niños inscritos en el curso.' : 'Los estudiantes de tus grupos.'}
+        descripcion={esAdmin ? 'Todos los niños inscritos en la escuela.' : 'Los estudiantes de tus grupos.'}
         acciones={
           esAdmin && (
             <button type="button" className="btn-primary" onClick={() => setModal({ valorInicial: null })}>

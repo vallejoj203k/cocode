@@ -15,7 +15,7 @@ const router = Router();
 
 router.get('/', (_req, res) => {
   res.json({
-    nombre: 'API Plataforma Curso de Python para Ninos',
+    nombre: 'API Logic Plus - Plataforma de cursos de programacion para ninos',
     version: '1.0.0',
     // Commit desplegado: si no coincide con el ultimo de main, el deploy no corrio.
     despliegue: env.version,

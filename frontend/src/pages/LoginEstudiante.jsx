@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { Spinner } from '../components/ui.jsx';
 import Icono from '../components/Icono.jsx';
 import Fondo from '../components/Fondo.jsx';
+import { MARCA } from '../lib/marca.js';
 
 /**
  * Entrada de los estudiantes. La usa el propio nino (8-10 anos), asi que todo
@@ -55,12 +56,12 @@ export default function LoginEstudiante() {
         <div className="mb-8 text-center">
           <img
             src="/logo.svg"
-            alt="Python Kids"
+            alt={MARCA}
             className="logo-img mx-auto rounded-2xl lg:rounded-3xl"
             style={{ '--logo-sm': '88px', '--logo-lg': '120px' }}
           />
           <h1 className="mt-4 text-4xl font-extrabold text-marca-800">¡Hola!</h1>
-          <p className="mt-2 text-lg text-marca-900/70">Entra para ver tu curso de Python</p>
+          <p className="mt-2 text-lg text-marca-900/70">Entra para ver tus clases</p>
         </div>
 
         <form onSubmit={enviar} className="card space-y-6 p-8">
@@ -80,7 +81,7 @@ export default function LoginEstudiante() {
               autoFocus
             />
             <span className="mt-2 block text-sm text-slate-500">
-              Es el correo que registró tu familia en el curso.
+              Es el correo que registró tu familia al inscribirte.
             </span>
           </label>
 
