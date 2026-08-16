@@ -13,8 +13,14 @@ const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL ?? 'admin@pythonkids.com').tri
 const ADMIN_PASSWORD = ADMIN_PASSWORD_CRUDO.trim();
 // Escotilla de emergencia para cuando se pierde el acceso al administrador.
 const RESET_ADMIN = process.env.RESET_ADMIN_PASSWORD === 'true';
-// Los datos de ejemplo se pueden desactivar con SEED_DEMO=false (util en produccion).
-const CON_DEMO = process.env.SEED_DEMO !== 'false';
+/**
+ * Los datos de ejemplo hay que pedirlos: SEED_DEMO=true.
+ *
+ * Antes venian activados salvo que se dijera lo contrario, y eso resucitaba a
+ * las familias de muestra en cada despliegue despues de haberlas borrado a mano.
+ * Inventar datos es lo raro; el valor por defecto tiene que ser no hacerlo.
+ */
+const CON_DEMO = process.env.SEED_DEMO === 'true';
 
 const hash = (plain) => bcrypt.hash(plain, 10);
 const periodo = (date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -40,14 +46,12 @@ async function seedCurriculum() {
   });
 
   for (const modulo of curriculum) {
+    // `update` vacio a proposito: si el modulo ya existe se deja como esta. Con
+    // los textos aqui, editar un modulo desde la plataforma duraba hasta el
+    // siguiente despliegue, que lo devolvia al original sin avisar.
     const registro = await prisma.module.upsert({
       where: { courseId_numero: { courseId: curso.id, numero: modulo.numero } },
-      update: {
-        nombre: modulo.nombre,
-        objetivo: modulo.objetivo,
-        descripcion: modulo.descripcion,
-        orden: modulo.numero,
-      },
+      update: {},
       create: {
         courseId: curso.id,
         numero: modulo.numero,
@@ -59,14 +63,10 @@ async function seedCurriculum() {
     });
 
     for (const clase of modulo.clases) {
+      // Igual que los modulos: lo que ya existe no se toca.
       await prisma.class.upsert({
         where: { moduleId_numeroClase: { moduleId: registro.id, numeroClase: clase.numeroClase } },
-        update: {
-          nombre: clase.nombre,
-          objetivo: clase.objetivo,
-          contenido: clase.contenido,
-          conceptosClave: clase.conceptosClave,
-        },
+        update: {},
         create: {
           moduleId: registro.id,
           numeroClase: clase.numeroClase,
@@ -361,7 +361,12 @@ export async function seed() {
     console.log('Sembrando base de datos...');
     const curso = await seedCurriculum();
     const admin = await seedAdmin();
-    if (CON_DEMO) await seedDemo(admin, curso);
+    if (CON_DEMO) {
+      console.log('  SEED_DEMO=true: creando datos de ejemplo (familias y finanzas de muestra).');
+      await seedDemo(admin, curso);
+    } else {
+      console.log('  sin datos de ejemplo (SEED_DEMO no es "true").');
+    }
     console.log('Listo.');
   } finally {
     await prisma.$disconnect();
