@@ -261,7 +261,7 @@ export default function Estudiantes() {
           descripcion={
             busqueda ? 'Prueba con otro nombre.' : 'Registra al primer estudiante para empezar a organizar los grupos.'
           }
-          icono="🧒"
+          icono="estudiantes"
         />
       ) : (
         <div className="card overflow-x-auto">

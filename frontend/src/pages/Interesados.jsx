@@ -267,7 +267,7 @@ export default function Interesados() {
               titulo={e.etiqueta}
               valor={resumen[e.id] ?? 0}
               detalle={filtro === e.id ? 'Filtrando por este estado' : e.ayuda}
-              icono={e.id === 'NUEVO' ? '🔔' : e.id === 'CONTACTADO' ? '📞' : e.id === 'INSCRITO' ? '✅' : '🚫'}
+              icono={e.id === 'NUEVO' ? 'pendiente' : e.id === 'CONTACTADO' ? 'telefono' : e.id === 'INSCRITO' ? 'hecho' : 'prohibido'}
               tono={e.tono === 'gris' ? undefined : e.tono}
             />
           </button>
@@ -290,7 +290,7 @@ export default function Interesados() {
                 ? 'Prueba quitando el filtro o buscando otra cosa.'
                 : 'Cuando alguien deje sus datos en la página pública aparecerá aquí.'
             }
-            icono="📇"
+            icono="interesados"
           />
         </div>
       ) : (

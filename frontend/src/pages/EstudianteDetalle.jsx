@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useFetch } from '../hooks/useApi.js';
 import { Badge, Cargando, EncabezadoPagina, EstadoVacio, MensajeError, Tarjeta } from '../components/ui.jsx';
 import { capitalizar, formatoFecha, nombreCompleto } from '../lib/format.js';
+import Icono from '../components/Icono.jsx';
 
 export default function EstudianteDetalle() {
   const { id } = useParams();
@@ -35,8 +36,9 @@ export default function EstudianteDetalle() {
             : 'Sin datos de acudiente'
         }
         acciones={
-          <Link to="/" className="btn-secondary">
-            ← Volver
+          <Link to="/" className="btn-secondary gap-1.5">
+            <Icono nombre="volver" size={16} />
+            Volver
           </Link>
         }
       />
@@ -46,10 +48,10 @@ export default function EstudianteDetalle() {
           titulo="Asistencia"
           valor={resumen.porcentajeAsistencia === null ? '—' : `${resumen.porcentajeAsistencia}%`}
           detalle={`${resumen.asistencias} de ${resumen.clasesRegistradas} clases`}
-          icono="✅"
+          icono="hecho"
           tono="verde"
         />
-        <Tarjeta titulo="Inasistencias" valor={resumen.inasistencias} icono="⚠️" tono="ambar" />
+        <Tarjeta titulo="Inasistencias" valor={resumen.inasistencias} icono="aviso" tono="ambar" />
         <Tarjeta
           titulo="Grupos"
           valor={estudiante.inscripciones.filter((i) => i.estado === 'ACTIVO').length}
@@ -59,7 +61,7 @@ export default function EstudianteDetalle() {
               .map((i) => `${i.group.nombre} (${capitalizar(i.group.diaSemana)} ${i.group.hora})`)
               .join(' · ') || 'Sin grupo asignado'
           }
-          icono="👥"
+          icono="grupos"
           tono="violeta"
         />
         {/* Tener el curso habilitado y estar en un grupo son cosas distintas:
@@ -69,7 +71,7 @@ export default function EstudianteDetalle() {
           titulo="Cursos habilitados"
           valor={cursosHabilitados.length}
           detalle={cursosHabilitados.join(' · ') || 'Sin curso habilitado'}
-          icono="📚"
+          icono="curriculo"
           tono="azul"
         />
       </div>
@@ -87,7 +89,7 @@ export default function EstudianteDetalle() {
           <EstadoVacio
             titulo="Todavía no hay clases registradas"
             descripcion="Cuando el tutor tome asistencia, el historial aparecerá aquí."
-            icono="📋"
+            icono="asistencia"
           />
         </div>
       ) : (

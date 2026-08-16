@@ -147,6 +147,59 @@ no a la pantalla del equipo.
 
 ---
 
+## Marca e iconos
+
+**No se usan emojis en la interfaz.** Se dibujan con [lucide-react](https://lucide.dev), de trazo
+y heredando el color del texto, y todos pasan por `frontend/src/components/Icono.jsx`.
+
+Ese fichero los nombra por lo que significan (`estudiantes`, `bloqueado`, `interesados`), no por
+cómo se dibujan (`Baby`, `Lock`, `ContactRound`). Así cambiar el icono de un concepto se hace en
+un sitio, y los componentes lo reciben como texto:
+
+```jsx
+<Tarjeta titulo="Interesados nuevos" valor={5} icono="pendiente" />
+<Icono nombre="telefono" size={16} />
+```
+
+Un nombre que no exista **no dibuja nada**: un hueco se nota y se corrige, un icono equivocado
+pasa desapercibido.
+
+### Dónde va el logo
+
+Todo sale de un único fichero, **`frontend/public/logo.svg`**. Sustitúyelo por el tuyo con el
+mismo nombre y no hay que tocar código: se actualizan a la vez la barra lateral, la cabecera
+móvil, las dos pantallas de acceso, la portada pública y el icono de la pestaña del navegador.
+
+| Dónde                     | Tamaño en pantalla |
+| ------------------------- | ------------------ |
+| Barra lateral             | 36 px              |
+| Cabecera móvil            | 28 px              |
+| Portada pública           | 38 px              |
+| Entrada del equipo        | 64 px              |
+| Entrada de estudiantes    | 88 px              |
+| Pestaña del navegador     | 16–32 px           |
+
+**Cómo debe ser el fichero:**
+
+- **SVG**, cuadrado, con `viewBox="0 0 64 64"`. Al ser vectorial sirve para los 16 px de la
+  pestaña y para los 88 px de la entrada de los niños sin verse borroso.
+- **Sin fondo blanco**: se muestra sobre fondos claros y sobre el degradado de la entrada de
+  estudiantes. Si tu marca necesita fondo, píntalo dentro del propio SVG (como hace el
+  marcador de posición actual, con un `rect` redondeado).
+- Que **se lea a 16 px**. Un logo con texto pequeño o mucho detalle se convierte en una mancha
+  en la pestaña del navegador. Si tu logo tiene versión completa y versión reducida, usa aquí la
+  reducida.
+
+**Opcional pero recomendado**: `frontend/public/og.png` de **1200×630 px**. Es la imagen que se
+ve al compartir el enlace de la portada por WhatsApp o redes; `index.html` ya la referencia. Sin
+ella el enlace se comparte sin vista previa.
+
+El nombre "Python Kids" es **texto**, no parte de la imagen: vive en
+`frontend/src/components/Logo.jsx`. Si tu logo ya incluye el nombre, pon `conNombre={false}`
+donde se use.
+
+---
+
 ## Modelo de datos
 
 ```

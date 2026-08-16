@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import Icono from './Icono.jsx';
 
 export function Spinner({ className = 'h-6 w-6' }) {
   return (
@@ -42,11 +43,11 @@ export function MensajeError({ error, onReintentar }) {
   );
 }
 
-export function EstadoVacio({ titulo, descripcion, accion, icono = '📭' }) {
+export function EstadoVacio({ titulo, descripcion, accion, icono = 'vacio' }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
-      <span className="text-4xl" aria-hidden="true">
-        {icono}
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+        <Icono nombre={icono} size={26} />
       </span>
       <h3 className="mt-3 text-base font-semibold text-slate-700">{titulo}</h3>
       {descripcion && <p className="mt-1 max-w-md text-sm text-slate-500">{descripcion}</p>}
@@ -90,8 +91,8 @@ export function Tarjeta({ titulo, valor, detalle, icono, tono = 'azul' }) {
       <div className="flex items-start justify-between">
         <p className="text-sm font-medium text-slate-500">{titulo}</p>
         {icono && (
-          <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg ${TONOS[tono]}`} aria-hidden="true">
-            {icono}
+          <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${TONOS[tono]}`}>
+            <Icono nombre={icono} size={18} />
           </span>
         )}
       </div>
@@ -150,7 +151,7 @@ export function Modal({ abierto, titulo, onCerrar, children, ancho = 'max-w-lg' 
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             aria-label="Cerrar"
           >
-            ✕
+            <Icono nombre="cerrar" size={18} />
           </button>
         </div>
         <div className="px-5 py-4">{children}</div>

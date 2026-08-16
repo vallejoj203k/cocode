@@ -16,6 +16,7 @@ import {
   FormularioCurso,
   FormularioModulo,
 } from '../components/curriculo/index.jsx';
+import Icono from '../components/Icono.jsx';
 
 /** Plan de clases de un curso: sus modulos y, dentro, sus clases. */
 export default function CursoDetalle() {
@@ -80,7 +81,7 @@ export default function CursoDetalle() {
       <EstadoVacio
         titulo="Curso no encontrado"
         descripcion="Puede que se haya eliminado o que no tengas acceso a él."
-        icono="📚"
+        icono="curriculo"
         accion={
           <Link to="/curriculo" className="btn-primary">
             Ver todos los cursos
@@ -126,8 +127,9 @@ export default function CursoDetalle() {
                 </button>
               </>
             )}
-            <Link to="/curriculo" className="btn-secondary">
-              ← Cursos
+            <Link to="/curriculo" className="btn-secondary gap-1.5">
+              <Icono nombre="volver" size={16} />
+              Cursos
             </Link>
           </>
         }
@@ -147,7 +149,7 @@ export default function CursoDetalle() {
               ? 'Crea el primer módulo para empezar a construir su plan de clases.'
               : 'El equipo todavía está preparando el contenido.'
           }
-          icono="📚"
+          icono="curriculo"
         />
       ) : (
         <div className="space-y-4">

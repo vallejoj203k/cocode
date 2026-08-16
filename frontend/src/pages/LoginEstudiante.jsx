@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Spinner } from '../components/ui.jsx';
+import Icono from '../components/Icono.jsx';
 
 /**
  * Entrada de los estudiantes. La usa el propio nino (8-10 anos), asi que todo
@@ -50,16 +51,17 @@ export default function LoginEstudiante() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-acento-400/30 via-marca-50 to-marca-200 px-4 py-10">
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
-          <p className="text-7xl" aria-hidden="true">
-            🐍
-          </p>
+          <img src="/logo.svg" alt="Python Kids" width="88" height="88" className="mx-auto rounded-2xl" />
           <h1 className="mt-4 text-4xl font-extrabold text-marca-800">¡Hola!</h1>
           <p className="mt-2 text-lg text-marca-900/70">Entra para ver tu curso de Python</p>
         </div>
 
         <form onSubmit={enviar} className="card space-y-6 p-8">
           <label className="block">
-            <span className="mb-2 block text-lg font-bold text-slate-800">📧 Tu correo</span>
+            <span className="mb-2 flex items-center gap-2 text-lg font-bold text-slate-800">
+              <Icono nombre="correo" size={22} />
+              Tu correo
+            </span>
             <input
               type="email"
               className="input h-14 text-lg"
@@ -76,7 +78,10 @@ export default function LoginEstudiante() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-lg font-bold text-slate-800">🔑 Tu contraseña</span>
+            <span className="mb-2 flex items-center gap-2 text-lg font-bold text-slate-800">
+              <Icono nombre="usuarios" size={22} />
+              Tu contraseña
+            </span>
             <div className="relative">
               <input
                 type={verPassword ? 'text' : 'password'}
@@ -89,9 +94,10 @@ export default function LoginEstudiante() {
               <button
                 type="button"
                 onClick={() => setVerPassword((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-2 text-sm font-semibold text-marca-600 hover:bg-marca-50"
+                className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-marca-600 hover:bg-marca-50"
               >
-                {verPassword ? '🙈 Ocultar' : '👀 Ver'}
+                <Icono nombre={verPassword ? 'ocultar' : 'ver'} size={18} />
+                {verPassword ? 'Ocultar' : 'Ver'}
               </button>
             </div>
           </label>
@@ -108,7 +114,7 @@ export default function LoginEstudiante() {
             disabled={enviando}
           >
             {enviando ? <Spinner className="h-5 w-5" /> : null}
-            {enviando ? 'Entrando...' : '¡Entrar! 🚀'}
+            {enviando ? 'Entrando...' : '¡Entrar!'}
           </button>
 
           <p className="text-center text-sm text-slate-500">

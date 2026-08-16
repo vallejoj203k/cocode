@@ -438,7 +438,7 @@ export default function Usuarios() {
       {cargando ? (
         <Cargando />
       ) : usuarios.length === 0 ? (
-        <EstadoVacio titulo="Sin resultados" descripcion="Ajusta los filtros de búsqueda." icono="🔑" />
+        <EstadoVacio titulo="Sin resultados" descripcion="Ajusta los filtros de búsqueda." icono="usuarios" />
       ) : (
         <div className="card overflow-x-auto">
           <table className="table-base">

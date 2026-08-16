@@ -34,11 +34,9 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-marca-50 via-slate-50 to-acento-400/20 px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <p className="text-5xl" aria-hidden="true">
-            🐍
-          </p>
+          <img src="/logo.svg" alt="Python Kids" width="64" height="64" className="mx-auto rounded-xl" />
           <h1 className="mt-3 text-2xl font-bold text-slate-900">Python Kids</h1>
-          <p className="text-sm text-slate-500">Entrada del equipo · administradores y tutores</p>
+          <p className="text-sm text-slate-500">Entrada del equipo · administradores, tutores y vendedores</p>
         </div>
 
         <form onSubmit={enviar} className="card space-y-4 p-6">
