@@ -1,0 +1,30 @@
+<!--
+  MARCADOR DE POSICION, a la espera del logo definitivo. El diseno de marca se
+  usa como fondo (background.svg), que a tamano de pestana no se lee.
+
+  Reemplaza este fichero por tu logo, con el mismo nombre y en la misma carpeta:
+  no hay que tocar codigo en ningun sitio.
+
+  Recomendado: SVG cuadrado con viewBox="0 0 64 64" y sin fondo blanco, para que
+  se vea bien sobre la barra lateral clara y sobre la cabecera.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Python Kids">
+  <rect width="64" height="64" rx="14" fill="#3178c6" />
+  <path
+    d="M24 22 L16 32 L24 42"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M40 22 L48 32 L40 42"
+    fill="none"
+    stroke="#ffd43b"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M35 19 L29 45" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" />
+</svg>

@@ -169,6 +169,10 @@ pasa desapercibido.
 
 ### Dónde va el logo
 
+> Ahora mismo `logo.svg` es un **marcador de posición**: el diseño de marca se usa como fondo
+> (`background.svg`), y a tamaño de pestaña no se lee. Cuando tengas un logo pensado para
+> tamaños pequeños, sustitúyelo.
+
 Todo sale de un único fichero, **`frontend/public/logo.svg`**. Sustitúyelo por el tuyo con el
 mismo nombre y no hay que tocar código: se actualizan a la vez la barra lateral, la cabecera
 móvil, las dos pantallas de acceso, la portada pública y el icono de la pestaña del navegador.
@@ -215,8 +219,14 @@ Dos ajustes, ambos al principio de `Fondo.jsx`:
 | `SATURACION` | `0.55`      | Rebaja el color. Un logo a plena saturación cansa la vista de fondo. |
 
 Y un parámetro por pantalla: `<Fondo variante="repetido" />` lo pone en mosaico, útil si tu dibujo
-es un motivo pequeño. Sin él se coloca **una sola vez, grande y centrado**, que es lo que suele
-funcionar con un logo entero.
+es un motivo pequeño. Sin él se coloca **una sola vez y completo** (`background-size: contain`),
+que funciona igual con un dibujo vertical que con uno horizontal.
+
+> **Cuidado con el peso.** La portada es pública y muchas familias la abrirán con datos móviles,
+> así que el fondo se descarga antes de que puedan dejarte su teléfono. Los ficheros que salen de
+> vectorizar una imagen traen coordenadas con 8 decimales y pesan de más: redondearlas a un
+> decimal no cambia nada a simple vista y aquí quitó el 41 % (1,2 MB → 736 KB). Si subes un dibujo
+> nuevo, mira cuánto ocupa.
 
 La marca de agua **no se usa dentro de la plataforma** (paneles, tablas, currículo): ahí la
 pantalla ya está llena de datos y cualquier cosa detrás resta legibilidad. Si la quieres también

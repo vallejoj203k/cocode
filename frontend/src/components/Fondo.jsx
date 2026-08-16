@@ -33,9 +33,11 @@ export default function Fondo({ variante = 'unico', opacidad = OPACIDAD }) {
       style={{
         backgroundImage: 'url(/background.svg)',
         backgroundRepeat: repetido ? 'repeat' : 'no-repeat',
-        // Un motivo pequeno se repite en mosaico; un logo entero se coloca una
-        // sola vez, grande y centrado.
-        backgroundSize: repetido ? '240px' : 'min(820px, 85vw)',
+        // Un motivo pequeno se repite en mosaico. Un dibujo entero se coloca una
+        // sola vez con `contain`, que lo muestra completo sea vertical u
+        // horizontal: midiendolo por el ancho, un dibujo alto se sale por arriba
+        // y por abajo y se pierde justo la parte que se reconoce.
+        backgroundSize: repetido ? '240px' : 'contain',
         backgroundPosition: 'center',
         // Se queda quieto al desplazar la pagina: un fondo que se mueve con el
         // texto distrae justo mientras se lee.
