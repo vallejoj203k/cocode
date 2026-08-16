@@ -42,6 +42,7 @@ export const nombreCompleto = (persona) =>
 export const ETIQUETAS_ROL = {
   ADMIN: 'Administrador',
   TUTOR: 'Tutor',
+  VENDEDOR: 'Vendedor',
   ESTUDIANTE: 'Estudiante / Acudiente',
 };
 

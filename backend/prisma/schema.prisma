@@ -17,7 +17,17 @@ datasource db {
 enum Role {
   ADMIN
   TUTOR
+  VENDEDOR // atiende a los interesados y les crea la cuenta al confirmar el pago
   ESTUDIANTE // cuenta de acceso operada por el estudiante o su acudiente
+}
+
+/// Ciclo de vida de un interesado, desde que deja sus datos hasta que se
+/// matricula o se descarta.
+enum LeadEstado {
+  NUEVO
+  CONTACTADO
+  INSCRITO
+  DESCARTADO
 }
 
 enum ClassStatus {
@@ -90,9 +100,48 @@ model User {
   pagosRegistrados     Payment[]       @relation("PaymentRecorder")
   accesosConcedidos    StudentAccess[] @relation("CourseAccessGranter")
   gastosRegistrados    Expense[]       @relation("ExpenseRecorder")
+  interesadosAtendidos Lead[]          @relation("LeadHandler")
+  interesadosOrigen    Lead[]          @relation("LeadAccount")
 
   @@index([rol])
   @@map("users")
+}
+
+/// Alguien que dejo sus datos en la pagina publica pidiendo informacion. Todavia
+/// no es un usuario: el vendedor lo contacta y, al confirmar el pago, le crea la
+/// cuenta. Se guarda aparte de `User` a proposito, para que un interesado que
+/// nunca se matricule no ensucie la lista de cuentas ni pueda iniciar sesion.
+model Lead {
+  id               String     @id @default(cuid())
+  /// Datos del acudiente, lo unico que se pide obligatorio.
+  nombre           String
+  telefono         String
+  email            String?
+  /// Datos del nino, opcionales: se piden para poder preparar la llamada.
+  nombreEstudiante String?
+  edadEstudiante   Int?
+  mensaje          String?
+  estado           LeadEstado @default(NUEVO)
+  /// Notas privadas del vendedor sobre la gestion.
+  notas            String?
+  contactadoEn     DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  /// Vendedor que lo esta atendiendo.
+  atendidoPorId String?
+  atendidoPor   User?   @relation("LeadHandler", fields: [atendidoPorId], references: [id], onDelete: SetNull)
+
+  /// Cuenta creada a partir de este interesado, cuando se matricula.
+  userId String?
+  user   User?   @relation("LeadAccount", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([estado])
+  @@index([createdAt])
+  @@map("leads")
 }
 
 /// El nino que toma el curso. Se separa de `User` para permitir que un mismo
@@ -229,10 +278,11 @@ model Course {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  modulos Module[]
-  grupos  Group[]
-  accesos StudentAccess[]
-  pagos   Payment[]
+  modulos     Module[]
+  grupos      Group[]
+  accesos     StudentAccess[]
+  pagos       Payment[]
+  interesados Lead[]
 
   @@index([orden])
   @@map("courses")

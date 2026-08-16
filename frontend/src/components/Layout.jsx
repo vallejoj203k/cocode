@@ -4,15 +4,20 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { ETIQUETAS_ROL } from '../lib/format.js';
 
 /** Menu lateral por rol: cada entrada declara quien puede verla. */
+const TODOS = ['ADMIN', 'TUTOR', 'VENDEDOR', 'ESTUDIANTE'];
+
 const NAVEGACION = [
-  { to: '/', etiqueta: 'Inicio', icono: '🏠', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'], exact: true },
-  { to: '/curriculo', etiqueta: 'Currículo', icono: '📚', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'] },
+  { to: '/', etiqueta: 'Inicio', icono: '🏠', roles: TODOS, exact: true },
+  { to: '/interesados', etiqueta: 'Interesados', icono: '📇', roles: ['ADMIN', 'VENDEDOR'] },
+  { to: '/curriculo', etiqueta: 'Currículo', icono: '📚', roles: TODOS },
   { to: '/grupos', etiqueta: 'Grupos', icono: '👥', roles: ['ADMIN', 'TUTOR'] },
-  { to: '/estudiantes', etiqueta: 'Estudiantes', icono: '🧒', roles: ['ADMIN', 'TUTOR'] },
+  { to: '/estudiantes', etiqueta: 'Estudiantes', icono: '🧒', roles: ['ADMIN', 'TUTOR', 'VENDEDOR'] },
   { to: '/usuarios', etiqueta: 'Usuarios', icono: '🔑', roles: ['ADMIN'] },
+  // El vendedor entra a la misma pantalla, pero solo con la pestana de pagos.
   { to: '/finanzas', etiqueta: 'Finanzas', icono: '💰', roles: ['ADMIN'] },
+  { to: '/finanzas', etiqueta: 'Pagos', icono: '💰', roles: ['VENDEDOR'] },
   { to: '/sugerencias', etiqueta: 'Sugerencias', icono: '💡', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'] },
-  { to: '/mi-cuenta', etiqueta: 'Mi cuenta', icono: '⚙️', roles: ['ADMIN', 'TUTOR', 'ESTUDIANTE'] },
+  { to: '/mi-cuenta', etiqueta: 'Mi cuenta', icono: '⚙️', roles: TODOS },
 ];
 
 function Enlaces({ rol, onNavegar }) {

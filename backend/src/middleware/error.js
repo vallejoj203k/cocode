@@ -28,6 +28,10 @@ export function errorHandler(err, _req, res, _next) {
 
   if (status >= 500) {
     console.error('[error]', err);
+    // El mensaje de un fallo interno suele traer detalles del servidor (el host
+    // y el puerto de la base, rutas del contenedor...). Con la portada abierta a
+    // internet eso no puede viajar al navegador: queda en el log y fuera.
+    if (env.isProd) message = 'Error interno del servidor. Intentalo de nuevo en un momento.';
   }
 
   res.status(status).json({

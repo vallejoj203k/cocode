@@ -15,7 +15,7 @@ import { ETIQUETAS_ROL } from '../../lib/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import SelectorCursos from '../../components/SelectorCursos.jsx';
 
-const TONO_ROL = { ADMIN: 'rojo', TUTOR: 'violeta', ESTUDIANTE: 'azul' };
+const TONO_ROL = { ADMIN: 'rojo', TUTOR: 'violeta', VENDEDOR: 'ambar', ESTUDIANTE: 'azul' };
 
 function FormularioUsuario({ valorInicial, cursos, onCerrar, onGuardado }) {
   const editando = Boolean(valorInicial?.id);
