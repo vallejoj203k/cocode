@@ -58,7 +58,7 @@ export default function Portada() {
 
       <header className="relative border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Logo tamano={38} subtitulo="Programación para niños" />
+          <Logo tamano={38} tamanoEscritorio={56} subtitulo="Programación para niños" />
           {/* Quien llega a la portada es una familia, asi que "Entrar" lleva a
               su puerta. El equipo entra por el enlace del pie. */}
           <Link to="/soy-estudiante" className="btn-secondary text-sm">

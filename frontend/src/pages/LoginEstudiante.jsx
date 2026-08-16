@@ -53,7 +53,12 @@ export default function LoginEstudiante() {
       <Fondo />
       <div className="relative w-full max-w-lg">
         <div className="mb-8 text-center">
-          <img src="/logo.svg" alt="Python Kids" width="88" height="88" className="mx-auto rounded-2xl" />
+          <img
+            src="/logo.svg"
+            alt="Python Kids"
+            className="logo-img mx-auto rounded-2xl lg:rounded-3xl"
+            style={{ '--logo-sm': '88px', '--logo-lg': '120px' }}
+          />
           <h1 className="mt-4 text-4xl font-extrabold text-marca-800">¡Hola!</h1>
           <p className="mt-2 text-lg text-marca-900/70">Entra para ver tu curso de Python</p>
         </div>

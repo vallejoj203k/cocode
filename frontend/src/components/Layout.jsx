@@ -83,7 +83,7 @@ export default function Layout() {
       {/* Menu lateral (escritorio) */}
       <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:min-h-screen lg:flex-col">
         <div className="border-b border-slate-200 px-5 py-5">
-          <Logo tamano={36} subtitulo="Plataforma del curso" />
+          <Logo tamano={36} tamanoEscritorio={52} subtitulo="Plataforma del curso" />
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <Enlaces rol={user.rol} />

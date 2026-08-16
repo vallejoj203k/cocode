@@ -36,7 +36,12 @@ export default function Login() {
       <Fondo />
       <div className="relative w-full max-w-md">
         <div className="mb-6 text-center">
-          <img src="/logo.svg" alt="Python Kids" width="64" height="64" className="mx-auto rounded-xl" />
+          <img
+            src="/logo.svg"
+            alt="Python Kids"
+            className="logo-img mx-auto rounded-xl lg:rounded-2xl"
+            style={{ '--logo-sm': '64px', '--logo-lg': '88px' }}
+          />
           <h1 className="mt-3 text-2xl font-bold text-slate-900">Python Kids</h1>
           <p className="text-sm text-slate-500">Entrada del equipo · administradores, tutores y vendedores</p>
         </div>

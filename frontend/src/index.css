@@ -50,4 +50,19 @@
   .table-base tbody tr:hover {
     @apply bg-slate-50/70;
   }
+
+  /* La marca se dibuja mas grande en escritorio, donde sobra sitio. Los dos
+     tamanos llegan como variables desde el componente Logo, para no depender de
+     clases de Tailwind generadas a partir de numeros variables. */
+  .logo-img {
+    width: var(--logo-sm);
+    height: var(--logo-sm);
+  }
+
+  @media (min-width: 1024px) {
+    .logo-img {
+      width: var(--logo-lg);
+      height: var(--logo-lg);
+    }
+  }
 }

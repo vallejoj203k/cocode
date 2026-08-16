@@ -177,14 +177,20 @@ Todo sale de un único fichero, **`frontend/public/logo.svg`**. Sustitúyelo por
 mismo nombre y no hay que tocar código: se actualizan a la vez la barra lateral, la cabecera
 móvil, las dos pantallas de acceso, la portada pública y el icono de la pestaña del navegador.
 
-| Dónde                     | Tamaño en pantalla |
-| ------------------------- | ------------------ |
-| Barra lateral             | 36 px              |
-| Cabecera móvil            | 28 px              |
-| Portada pública           | 38 px              |
-| Entrada del equipo        | 64 px              |
-| Entrada de estudiantes    | 88 px              |
-| Pestaña del navegador     | 16–32 px           |
+En escritorio se dibuja más grande, donde sobra sitio y una marca pequeña se pierde. El salto lo
+da la clase `.logo-img` de `index.css` a partir de 1024 px de ancho:
+
+| Dónde                  | Móvil | Escritorio |
+| ---------------------- | ----- | ---------- |
+| Cabecera móvil         | 28 px | —          |
+| Barra lateral          | —     | 52 px      |
+| Portada pública        | 38 px | 56 px      |
+| Entrada del equipo     | 64 px | 88 px      |
+| Entrada de estudiantes | 88 px | 120 px     |
+| Pestaña del navegador  | 16–32 px          ||
+
+Los dos tamaños viajan como variables CSS desde el componente `Logo` y no como clases de
+Tailwind, porque Tailwind las genera leyendo el código y aquí los números son parámetros.
 
 **Cómo debe ser el fichero:**
 
