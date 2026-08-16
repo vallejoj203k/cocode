@@ -57,9 +57,10 @@ configurar CORS en desarrollo.
 | Tutor                 | `carlos.tutor@pythonkids.com` | `Demo1234*` |
 | Estudiante / acudiente| `familia.gomez@correo.com`    | `Demo1234*` |
 
-> Los datos de ejemplo (tutores, familias, grupos, pagos) solo se crean si `SEED_DEMO`
-> no es `false`. En producción usa `SEED_DEMO=false` para sembrar únicamente el currículo
-> y la cuenta de administrador — y cambia la contraseña del admin al primer ingreso.
+> Esas cuentas solo existen con **`SEED_DEMO=true`**, que es lo que trae `.env.example` para
+> desarrollo. Sin esa variable el seed crea únicamente el currículo y la cuenta de administrador:
+> **inventar datos es lo raro, así que hay que pedirlo**. En producción no la pongas, y cambia la
+> contraseña del admin al primer ingreso.
 
 ---
 
@@ -531,7 +532,7 @@ En el proyecto, **+ New → Database → PostgreSQL**. Sin esto el servicio no a
 | `CORS_ORIGINS`        | `*`                                           |
 | `VALOR_MENSUALIDAD`   | el valor de la mensualidad, ej. `120000`      |
 | `SEED_ON_START`       | `true` **solo para el primer despliegue**     |
-| `SEED_DEMO`           | `false`                                       |
+| `SEED_DEMO`           | **no la pongas** (los datos de ejemplo son opcionales) |
 | `SEED_ADMIN_EMAIL`    | tu correo de administrador                    |
 | `SEED_ADMIN_PASSWORD` | una contraseña que cambiarás al entrar        |
 
@@ -593,11 +594,20 @@ Y en un despliegue sin consola, con variables: `LIMPIAR_AL_ARRANCAR=demo` (o `to
 `LIMPIAR_CONFIRMAR=true`. Sin la segunda solo escribe en el log lo que borraría. Quita ambas
 después de usarlas.
 
+> **Si vuelven después de un despliegue**, es que `SEED_DEMO=true` sigue puesto en las variables
+> del servicio: cada arranque con `SEED_ON_START=true` los recrea. Quita `SEED_DEMO` (o ponla en
+> `false`) y vuelve a borrarlos. Lo normal es quitar también `SEED_ON_START` tras el primer
+> arranque correcto.
+
 **Qué se conserva siempre**, sea cual sea la vía:
 
 - El **currículo** completo: cursos, módulos y clases.
 - Las cuentas de **administrador**.
 - **Todo lo que hayas creado tú**: familias, estudiantes, grupos, pagos y gastos reales.
+
+**El seed no pisa lo que edites.** Un módulo o una clase que ya existan se dejan como están, así
+que renombrar un módulo desde la plataforma no se revierte en el siguiente despliegue. El seed
+solo añade lo que falta.
 
 Lo de ejemplo se reconoce por los nombres y correos que escribe `seed.js`, incluidos los gastos
 —que no cuelgan de ningún estudiante y hay que buscar por su descripción, o se quedarían en el
@@ -630,8 +640,9 @@ El arranque comprueba `DATABASE_URL` antes de lanzar Prisma (`prisma/preflight.j
 o llega vacía, imprime estos mismos pasos en lugar del error de esquema.
 
 **La base nueva está vacía**, así que también hay que volver a sembrarla: `SEED_ON_START=true`
-con `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD`, y `SEED_DEMO=false` si no quieres datos de
-ejemplo. Las cuentas, los niños y los pagos de la base anterior **no se recuperan**.
+con `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD`. No pongas `SEED_DEMO`: sin ella el seed crea solo
+el currículo y tu cuenta. Las cuentas, los niños y los pagos de la base anterior **no se
+recuperan**.
 
 ### Una cuenta de estudiante que "no ve nada"
 
