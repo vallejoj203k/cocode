@@ -23,7 +23,7 @@ async function dashboardAdmin() {
   const hoy = new Date();
   const desde = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - 5, 1));
 
-  const [estudiantes, tutores, grupos, cursos, sugerenciasNuevas, resumen, cartera] =
+  const [estudiantes, tutores, grupos, cursos, sugerenciasNuevas, interesadosNuevos, resumen, cartera] =
     await Promise.all([
       prisma.student.count({ where: { activo: true } }),
       prisma.user.count({ where: { rol: 'TUTOR', activo: true } }),
@@ -45,6 +45,7 @@ async function dashboardAdmin() {
         },
       }),
       prisma.suggestion.count({ where: { estado: 'NUEVA' } }),
+      prisma.lead.count({ where: { estado: 'NUEVO' } }),
       resumenFinanciero({ desde, hasta: hoy }),
       estadoCartera(periodoActual()),
     ]);
@@ -91,6 +92,7 @@ async function dashboardAdmin() {
       modulos: detalleCursos.reduce((acc, c) => acc + c.modulos, 0),
       totalClases: detalleCursos.reduce((acc, c) => acc + c.totalClases, 0),
       sugerenciasNuevas,
+      interesadosNuevos,
     },
     revision: { ninosSinCuenta, cuentasSinNino, ninosSinCurso },
     cursos: detalleCursos,
@@ -279,11 +281,51 @@ async function dashboardEstudiante(userId) {
   return { estudiantes: detalle };
 }
 
+/** Panel de ventas: a quien hay que llamar hoy y como va la conversion. */
+async function dashboardVendedor(userId) {
+  const desdeMes = new Date();
+  desdeMes.setUTCDate(1);
+  desdeMes.setUTCHours(0, 0, 0, 0);
+
+  const [porEstado, pendientes, inscritosMes, mios] = await Promise.all([
+    prisma.lead.groupBy({ by: ['estado'], _count: { _all: true } }),
+    prisma.lead.findMany({
+      where: { estado: { in: ['NUEVO', 'CONTACTADO'] } },
+      orderBy: [{ estado: 'asc' }, { createdAt: 'asc' }],
+      take: 10,
+      include: { course: { select: { nombre: true } } },
+    }),
+    prisma.lead.count({ where: { estado: 'INSCRITO', updatedAt: { gte: desdeMes } } }),
+    prisma.lead.count({ where: { atendidoPorId: userId, estado: { in: ['NUEVO', 'CONTACTADO'] } } }),
+  ]);
+
+  const cuenta = (estado) => porEstado.find((p) => p.estado === estado)?._count._all ?? 0;
+
+  return {
+    tarjetas: {
+      nuevos: cuenta('NUEVO'),
+      contactados: cuenta('CONTACTADO'),
+      inscritos: cuenta('INSCRITO'),
+      inscritosMes,
+      mios,
+    },
+    pendientes: pendientes.map((l) => ({
+      id: l.id,
+      nombre: l.nombre,
+      telefono: l.telefono,
+      curso: l.course?.nombre ?? 'Sin curso indicado',
+      estado: l.estado,
+      createdAt: l.createdAt,
+    })),
+  };
+}
+
 router.get(
   '/',
   asyncHandler(async (req, res) => {
     if (req.user.rol === 'ADMIN') return res.json(toJSON(await dashboardAdmin()));
     if (req.user.rol === 'TUTOR') return res.json(toJSON(await dashboardTutor(req.user.id)));
+    if (req.user.rol === 'VENDEDOR') return res.json(toJSON(await dashboardVendedor(req.user.id)));
     return res.json(toJSON(await dashboardEstudiante(req.user.id)));
   }),
 );

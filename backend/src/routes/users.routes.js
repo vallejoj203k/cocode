@@ -18,7 +18,7 @@ const createUserSchema = z
     nombre: z.string().min(2, 'El nombre es obligatorio'),
     email: z.string().email('Email invalido'),
     password: z.string().min(8, 'La contrasena debe tener al menos 8 caracteres'),
-    rol: z.enum(['ADMIN', 'TUTOR', 'ESTUDIANTE']),
+    rol: z.enum(['ADMIN', 'TUTOR', 'VENDEDOR', 'ESTUDIANTE']),
     telefono: z.string().optional().nullable(),
     // Al crear una cuenta de estudiante se crea tambien la ficha del nino, con
     // los cursos que el admin le habilita.
@@ -40,13 +40,13 @@ const updateUserSchema = z.object({
   nombre: z.string().min(2).optional(),
   email: z.string().email().optional(),
   password: z.string().min(8).optional(),
-  rol: z.enum(['ADMIN', 'TUTOR', 'ESTUDIANTE']).optional(),
+  rol: z.enum(['ADMIN', 'TUTOR', 'VENDEDOR', 'ESTUDIANTE']).optional(),
   telefono: z.string().optional().nullable(),
   activo: z.boolean().optional(),
 });
 
 const listQuerySchema = z.object({
-  rol: z.enum(['ADMIN', 'TUTOR', 'ESTUDIANTE']).optional(),
+  rol: z.enum(['ADMIN', 'TUTOR', 'VENDEDOR', 'ESTUDIANTE']).optional(),
   search: z.string().optional(),
   activo: z.enum(['true', 'false']).optional(),
   page: z.string().optional(),

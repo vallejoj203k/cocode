@@ -8,6 +8,8 @@ import curriculumRoutes from './curriculum.routes.js';
 import suggestionsRoutes from './suggestions.routes.js';
 import financeRoutes from './finance.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
+import leadsRoutes from './leads.routes.js';
+import publicRoutes from './public.routes.js';
 
 const router = Router();
 
@@ -26,11 +28,17 @@ router.get('/', (_req, res) => {
       '/api/suggestions',
       '/api/finance',
       '/api/dashboard',
+      '/api/leads',
+      '/api/public (sin sesion)',
     ],
   });
 });
 
+// Sin autenticacion: la pagina de venta y el formulario de interesados.
+router.use('/public', publicRoutes);
+
 router.use('/auth', authRoutes);
+router.use('/leads', leadsRoutes);
 router.use('/users', usersRoutes);
 router.use('/students', studentsRoutes);
 router.use('/groups', groupsRoutes);

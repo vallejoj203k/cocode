@@ -48,6 +48,7 @@ export function authorize(...roles) {
 
 export const isAdmin = (req) => req.user?.rol === 'ADMIN';
 export const isTutor = (req) => req.user?.rol === 'TUTOR';
+export const isVendedor = (req) => req.user?.rol === 'VENDEDOR';
 export const isEstudiante = (req) => req.user?.rol === 'ESTUDIANTE';
 
 /** IDs de los grupos donde el tutor esta asignado. */

@@ -63,20 +63,23 @@ configurar CORS en desarrollo.
 
 ## Roles y permisos
 
-| Acción                                   | Admin | Tutor            | Estudiante/Acudiente |
-| ---------------------------------------- | :---: | :--------------: | :------------------: |
-| Ver currículo                            |  ✅   | ✅ (solo lectura) | ✅ (solo lectura)     |
-| Crear y editar cursos                    |  ✅   | ❌               | ❌                    |
-| Editar módulos y clases                  |  ✅   | ❌               | ❌                    |
-| Gestionar usuarios                       |  ✅   | ❌               | ❌                    |
-| Gestionar estudiantes y grupos           |  ✅   | ❌               | ❌                    |
-| Ver estudiantes                          | todos | solo sus grupos  | solo sus hijos        |
-| Registrar avance de clases               |  ✅   | ✅ (sus grupos)   | ❌                    |
-| Tomar asistencia y dejar observaciones   |  ✅   | ✅ (sus grupos)   | ❌                    |
-| Ver su propio avance y asistencia        |  ✅   | ✅               | ✅                    |
-| Enviar sugerencias                       |  ✅   | ✅               | ✅                    |
-| Responder sugerencias                    |  ✅   | ❌               | ❌                    |
-| Módulo financiero                        |  ✅   | ❌               | ❌                    |
+| Acción                                 | Admin | Tutor             | Vendedor         | Estudiante/Acudiente |
+| -------------------------------------- | :---: | :---------------: | :--------------: | :------------------: |
+| Ver currículo                          |  ✅   | ✅ (solo lectura) | ✅ (solo lectura) | ✅ (solo lectura)    |
+| Crear y editar cursos                  |  ✅   | ❌                | ❌               | ❌                   |
+| Editar módulos y clases                |  ✅   | ❌                | ❌               | ❌                   |
+| Gestionar usuarios                     |  ✅   | ❌                | ❌               | ❌                   |
+| Gestionar estudiantes y grupos         |  ✅   | ❌                | ❌               | ❌                   |
+| Ver estudiantes                        | todos | solo sus grupos   | todos            | solo sus hijos       |
+| Registrar avance de clases             |  ✅   | ✅ (sus grupos)   | ❌               | ❌                   |
+| Tomar asistencia y dejar observaciones |  ✅   | ✅ (sus grupos)   | ❌               | ❌                   |
+| Ver su propio avance y asistencia      |  ✅   | ✅                | —                | ✅                   |
+| Enviar sugerencias                     |  ✅   | ✅                | ❌               | ✅                   |
+| Responder sugerencias                  |  ✅   | ❌                | ❌               | ❌                   |
+| Atender interesados                    |  ✅   | ❌                | ✅               | ❌                   |
+| Crear la cuenta de una familia         |  ✅   | ❌                | ✅ (desde el interesado) | ❌            |
+| Registrar pagos                        |  ✅   | ❌                | ✅               | ❌                   |
+| Balance, gastos y cartera              |  ✅   | ❌                | ❌               | ❌                   |
 
 El control se aplica en el backend (middleware `authorize` + filtros por rol en cada
 consulta), no solo en la interfaz: entrar por URL directa a una sección ajena devuelve 403.
@@ -94,13 +97,44 @@ que reenviarlo cada semana:
 
 El enlace se valida como URL en el formulario y también en el servidor.
 
+### De visitante a estudiante
+
+La raíz `/` es **pública**: presenta los cursos y recoge un teléfono al que llamar. No pide crear
+una cuenta, porque una cuenta sin pago confirmado no le sirve a nadie.
+
+```
+Visitante deja sus datos en /   →   Lead (NUEVO)
+Vendedor llama                  →   Lead (CONTACTADO)
+Confirma el pago                →   crea User + Student + acceso al curso, Lead (INSCRITO)
+Familia entra por /soy-estudiante y ya ve su curso
+```
+
+El paso de conversión crea **la cuenta, la ficha del niño y su acceso al curso en una sola
+operación** dentro de una transacción. Es a propósito: los estados a medias (cuenta sin niño,
+niño sin cuenta) eran la causa más común de "asigné el curso y la familia no ve nada".
+
+Un interesado se guarda en la tabla `leads`, no en `users`: quien nunca se matricule no ensucia
+la lista de cuentas ni puede iniciar sesión.
+
+**El formulario está abierto a internet**, así que tiene tres frenos: validación en el servidor,
+un límite de 10 envíos por hora desde la misma IP, y un campo trampa invisible que solo rellenan
+los bots — a esos se les responde `201` igual que a una persona, porque decirles que fueron
+rechazados solo les enseña a ajustar el siguiente intento.
+
+Lo público **no filtra el currículo**: `/api/public/courses` devuelve nombre, descripción, edad y
+cuántos módulos tiene cada curso, nunca sus clases ni su contenido.
+
+El rol **Vendedor** se crea desde *Usuarios → + Nuevo usuario*. Ve Interesados, Estudiantes,
+Currículo y Pagos; el balance, los gastos, la cartera y la gestión de usuarios le responden `403`
+aunque llame a la API directamente.
+
 ### Dos entradas
 
 La plataforma tiene dos pantallas de acceso a la misma cuenta y contraseña:
 
 | Ruta              | Para quién                | Cómo es                                              |
 | ----------------- | ------------------------- | ---------------------------------------------------- |
-| `/login`          | administradores y tutores | Formulario compacto, el de siempre                    |
+| `/login`          | administradores, tutores y vendedores | Formulario compacto, el de siempre         |
 | `/soy-estudiante` | estudiantes               | Texto grande, lenguaje sencillo y botón de ver la contraseña, porque la usa el niño (8-10 años) por su cuenta |
 
 Cada pantalla enlaza a la otra, así que nadie queda atrapado en la puerta equivocada.
@@ -121,7 +155,10 @@ Course ─┬─< Module ─< Class
 
 User ─┬─< Group (tutor)
       ├─< Student (cuenta de acceso de la familia)
+      ├─< Lead (vendedor que lo atiende / cuenta creada a partir de él)
       └─< Suggestion / Payment / Expense (autor o registrador)
+
+Lead ──> Course (curso que pidió)
 
 Student ─┬─< StudentGroup >─ Group
          ├─< Attendance >─ GroupProgress >─ Class >─ Module

@@ -10,8 +10,18 @@ import { concederAccesoPorPago } from '../services/access.service.js';
 
 const router = Router();
 
-// El modulo financiero es exclusivo del Admin.
-router.use(authenticate, authorize('ADMIN'));
+router.use(authenticate);
+
+/**
+ * El modulo financiero es del Admin salvo los pagos, que el vendedor tambien
+ * registra al confirmar una matricula. Se resuelve con una lista de lo que se
+ * abre y no de lo que se cierra: cualquier ruta que se anada aqui manana nace
+ * siendo solo del admin, que es el lado seguro por el que equivocarse.
+ */
+router.use((req, res, next) => {
+  const permitidos = req.path.startsWith('/payments') ? ['ADMIN', 'VENDEDOR'] : ['ADMIN'];
+  return authorize(...permitidos)(req, res, next);
+});
 
 const METODOS = ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'NEQUI', 'DAVIPLATA', 'OTRO'];
 const CATEGORIAS = ['PLATAFORMA', 'MATERIALES', 'PAGO_TUTORES', 'MARKETING', 'ADMINISTRATIVO', 'OTRO'];

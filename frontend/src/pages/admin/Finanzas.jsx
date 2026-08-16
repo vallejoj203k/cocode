@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, descargarArchivo } from '../../api/client.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useFetch } from '../../hooks/useApi.js';
 import {
   Badge,
@@ -820,17 +821,26 @@ function Cartera() {
 }
 
 export default function Finanzas() {
-  const [pestana, setPestana] = useState('balance');
+  const { esAdmin } = useAuth();
+  // El vendedor registra pagos, pero el balance, los gastos y la cartera son
+  // del admin. El backend ya lo impide; aqui se evita ofrecerle pestanas que
+  // solo le devolverian un error.
+  const pestanas = esAdmin ? PESTANAS : PESTANAS.filter((t) => t.id === 'ingresos');
+  const [pestana, setPestana] = useState(esAdmin ? 'balance' : 'ingresos');
 
   return (
     <>
       <EncabezadoPagina
-        titulo="Módulo financiero"
-        descripcion="Ingresos, gastos, balance y estado de cartera del curso."
+        titulo={esAdmin ? 'Módulo financiero' : 'Pagos'}
+        descripcion={
+          esAdmin
+            ? 'Ingresos, gastos, balance y estado de cartera del curso.'
+            : 'Registra los pagos de las familias que matriculas.'
+        }
       />
 
       <div className="mb-5 flex gap-2 overflow-x-auto border-b border-slate-200">
-        {PESTANAS.map((t) => (
+        {pestanas.map((t) => (
           <button
             key={t.id}
             type="button"

@@ -3,7 +3,15 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { ApiError, asyncHandler, paginated, parsePagination } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
-import { accountStudentIds, authenticate, authorize, isAdmin, isTutor, tutorGroupIds } from '../middleware/auth.js';
+import {
+  accountStudentIds,
+  authenticate,
+  authorize,
+  isAdmin,
+  isTutor,
+  isVendedor,
+  tutorGroupIds,
+} from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { sincronizarAccesos } from '../services/access.service.js';
 
@@ -30,6 +38,9 @@ const studentSchema = z.object({
  */
 async function scopeForUser(req) {
   if (isAdmin(req)) return {};
+  // El vendedor los ve a todos porque necesita encontrar a la familia a la que
+  // acaba de vender para registrarle el pago. Editarlos sigue siendo del admin.
+  if (isVendedor(req)) return {};
   if (isTutor(req)) {
     const groupIds = await tutorGroupIds(req.user.id);
     return { inscripciones: { some: { groupId: { in: groupIds }, estado: 'ACTIVO' } } };

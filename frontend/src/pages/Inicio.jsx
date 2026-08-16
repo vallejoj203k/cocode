@@ -131,6 +131,13 @@ function InicioAdmin({ data }) {
           tono="ambar"
         />
         <Tarjeta
+          titulo="Interesados nuevos"
+          valor={tarjetas.interesadosNuevos ?? 0}
+          detalle={tarjetas.interesadosNuevos ? 'Sin llamar todavía' : 'Todos atendidos'}
+          icono="📇"
+          tono={tarjetas.interesadosNuevos ? 'rojo' : 'verde'}
+        />
+        <Tarjeta
           titulo="Sugerencias nuevas"
           valor={tarjetas.sugerenciasNuevas}
           detalle={tarjetas.sugerenciasNuevas ? 'Pendientes de revisar' : 'Todo al día'}
@@ -323,6 +330,71 @@ function InicioTutor({ data }) {
   );
 }
 
+/** Panel de ventas: a quien llamar hoy y como va la conversion. */
+function InicioVendedor({ data }) {
+  const { tarjetas, pendientes } = data;
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Tarjeta
+          titulo="Sin llamar"
+          valor={tarjetas.nuevos}
+          detalle={tarjetas.nuevos ? 'Llámalos hoy' : 'Todos atendidos'}
+          icono="🔔"
+          tono={tarjetas.nuevos ? 'rojo' : 'verde'}
+        />
+        <Tarjeta titulo="Contactados" valor={tarjetas.contactados} detalle="En seguimiento" icono="📞" tono="ambar" />
+        <Tarjeta
+          titulo="Inscritos este mes"
+          valor={tarjetas.inscritosMes}
+          detalle={`${tarjetas.inscritos} en total`}
+          icono="✅"
+          tono="verde"
+        />
+        <Tarjeta titulo="A tu cargo" valor={tarjetas.mios} detalle="Pendientes que atiendes tú" icono="🙋" />
+      </div>
+
+      <h2 className="mt-8 text-lg font-semibold text-slate-900">Por llamar</h2>
+      {pendientes.length === 0 ? (
+        <div className="mt-3">
+          <EstadoVacio
+            titulo="No hay nadie esperando"
+            descripcion="Cuando alguien deje sus datos en la página pública aparecerá aquí."
+            icono="📇"
+          />
+        </div>
+      ) : (
+        <div className="card mt-3 divide-y divide-slate-100">
+          {pendientes.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <div>
+                <p className="font-medium text-slate-900">{p.nombre}</p>
+                <p className="text-xs text-slate-500">
+                  {p.curso} · llegó el {formatoFecha(p.createdAt)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge tono={p.estado === 'NUEVO' ? 'rojo' : 'ambar'}>
+                  {p.estado === 'NUEVO' ? 'Sin llamar' : 'Contactado'}
+                </Badge>
+                <a href={`tel:${p.telefono}`} className="btn-secondary text-xs">
+                  📞 {p.telefono}
+                </a>
+              </div>
+            </div>
+          ))}
+          <div className="px-5 py-3">
+            <Link to="/interesados" className="text-sm font-semibold text-marca-600 hover:underline">
+              Ver todos los interesados →
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function InicioEstudiante({ data }) {
   const { estudiantes } = data;
 
@@ -473,11 +545,14 @@ export default function Inicio() {
             ? 'Resumen general del curso y del negocio.'
             : user.rol === 'TUTOR'
               ? 'Este es el estado de tus grupos.'
-              : 'Así va el curso de tus estudiantes.'
+              : user.rol === 'VENDEDOR'
+                ? 'Estos son los interesados que están esperando.'
+                : 'Así va el curso de tus estudiantes.'
         }
       />
       {user.rol === 'ADMIN' && <InicioAdmin data={data} />}
       {user.rol === 'TUTOR' && <InicioTutor data={data} />}
+      {user.rol === 'VENDEDOR' && <InicioVendedor data={data} />}
       {user.rol === 'ESTUDIANTE' && <InicioEstudiante data={data} />}
     </>
   );
