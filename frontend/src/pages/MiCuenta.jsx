@@ -58,7 +58,7 @@ export default function MiCuenta() {
             </div>
           </dl>
           <p className="mt-4 text-xs text-slate-400">
-            Para cambiar tu nombre o correo, pídeselo al administrador del curso.
+            Para cambiar tu nombre o correo, pídeselo al administrador de la plataforma.
           </p>
         </div>
 

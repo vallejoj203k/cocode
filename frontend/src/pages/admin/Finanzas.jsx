@@ -658,7 +658,7 @@ function Gastos() {
       {cargando ? (
         <Cargando />
       ) : gastos.length === 0 ? (
-        <EstadoVacio titulo="Sin gastos registrados" descripcion="Registra los gastos operativos del curso." icono="recibo" />
+        <EstadoVacio titulo="Sin gastos registrados" descripcion="Registra los gastos operativos de la escuela." icono="recibo" />
       ) : (
         <div className="card overflow-x-auto">
           <table className="table-base">
@@ -834,7 +834,7 @@ export default function Finanzas() {
         titulo={esAdmin ? 'Módulo financiero' : 'Pagos'}
         descripcion={
           esAdmin
-            ? 'Ingresos, gastos, balance y estado de cartera del curso.'
+            ? 'Ingresos, gastos, balance y estado de cartera de la escuela.'
             : 'Registra los pagos de las familias que matriculas.'
         }
       />

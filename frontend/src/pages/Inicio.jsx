@@ -405,7 +405,7 @@ function InicioEstudiante({ data }) {
     return (
       <EstadoVacio
         titulo="Todavía no hay estudiantes vinculados a tu cuenta"
-        descripcion="Comunícate con el administrador del curso para que vincule a tu hijo o hija con esta cuenta."
+        descripcion="Comunícate con el administrador de la plataforma para que vincule a tu hijo o hija con esta cuenta."
         icono="estudiantes"
       />
     );
@@ -447,7 +447,7 @@ function InicioEstudiante({ data }) {
 
           {e.cursos.length === 0 ? (
             <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
-              Todavía no tiene ningún curso habilitado. Pídeselo al administrador del curso.
+              Todavía no tiene ningún curso habilitado. Pídeselo al administrador de la plataforma.
             </p>
           ) : (
             /* Un bloque por curso: cada uno avanza a su propio ritmo. */
@@ -523,7 +523,7 @@ function InicioEstudiante({ data }) {
       ))}
 
       <div className="rounded-xl bg-marca-500 p-6 text-white">
-        <h3 className="text-base font-semibold">¿Tienes una idea para mejorar el curso?</h3>
+        <h3 className="text-base font-semibold">¿Tienes una idea para mejorar las clases?</h3>
         <p className="mt-1 text-sm text-marca-50">Cuéntanos por el buzón de sugerencias, leemos todos los mensajes.</p>
         <Link to="/sugerencias" className="btn mt-4 bg-white text-marca-700 hover:bg-marca-50">
           Escribir una sugerencia
@@ -544,9 +544,10 @@ export default function Inicio() {
     <>
       <EncabezadoPagina
         titulo={`Hola, ${user.nombre.split(' ')[0]}`}
+        tituloPestana="Inicio"
         descripcion={
           user.rol === 'ADMIN'
-            ? 'Resumen general del curso y del negocio.'
+            ? 'Resumen general de los cursos y del negocio.'
             : user.rol === 'TUTOR'
               ? 'Este es el estado de tus grupos.'
               : user.rol === 'VENDEDOR'

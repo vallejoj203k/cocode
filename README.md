@@ -1,9 +1,11 @@
-# 🐍 Python Kids — Plataforma del curso
+# Logic Plus — Plataforma de cursos
 
-Plataforma web para gestionar los cursos de programación para niños. Nace con el curso de
-Python desde cero para niños de 8 a 10 años —11 meses, una clase de una hora por semana,
-organizado en **11 módulos de 4 clases** (44 clases)— y admite **varios cursos en paralelo**,
-cada uno con su propio currículo.
+Plataforma web para gestionar una escuela de programación para niños. **Cada curso enseña un
+lenguaje distinto** y tiene su propio currículo, sus propios grupos y su propio avance.
+
+El primero fue Python desde cero para niños de 8 a 10 años —11 meses, una clase de una hora por
+semana, en **11 módulos de 4 clases** (44 clases)—, pero nada en la plataforma está atado a ese
+curso ni a ese lenguaje: los cursos se crean desde la interfaz, sin tocar código.
 
 Centraliza el currículo, la gestión de usuarios por rol, el seguimiento del avance y la
 asistencia de cada estudiante, el buzón de sugerencias y el control financiero del negocio.
@@ -242,7 +244,20 @@ ahí, se añade en el componente `Layout`.
 ve al compartir el enlace de la portada por WhatsApp o redes; `index.html` ya la referencia. Sin
 ella el enlace se comparte sin vista previa.
 
-El nombre "Python Kids" es **texto**, no parte de la imagen: vive en
+### Los títulos de las páginas
+
+El título de la pestaña del navegador cambia con cada página: `Cursos · Logic Plus`,
+`Interesados · Logic Plus`, y en el detalle de un curso su propio nombre
+(`Python para niños · Logic Plus`). Importa porque quien administra la escuela suele tener varias
+pestañas abiertas a la vez, y con una sola aplicación de página el título no cambia solo.
+
+Lo pone `EncabezadoPagina` a través de `hooks/useTitulo.js`. Como **toda página pasa por ese
+componente**, no hay que acordarse de nada al añadir una nueva. Si el título visible no funciona
+fuera de la pantalla — "Hola, Ana" no dice nada en una pestaña — se pasa `tituloPestana`.
+
+El nombre y el lema viven en `frontend/src/lib/marca.js`.
+
+El nombre "Logic Plus" es **texto**, no parte de la imagen: vive en
 `frontend/src/components/Logo.jsx`. Si tu logo ya incluye el nombre, pon `conNombre={false}`
 donde se use.
 

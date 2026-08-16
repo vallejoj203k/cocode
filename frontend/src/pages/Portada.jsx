@@ -6,6 +6,7 @@ import { Campo, Cargando, MensajeError } from '../components/ui.jsx';
 import Icono from '../components/Icono.jsx';
 import Logo from '../components/Logo.jsx';
 import Fondo from '../components/Fondo.jsx';
+import { LEMA } from '../lib/marca.js';
 
 const VACIO = {
   nombre: '',
@@ -58,7 +59,7 @@ export default function Portada() {
 
       <header className="relative border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Logo tamano={38} tamanoEscritorio={56} subtitulo="Programación para niños" />
+          <Logo tamano={38} tamanoEscritorio={56} subtitulo={LEMA} />
           {/* Quien llega a la portada es una familia, asi que "Entrar" lleva a
               su puerta. El equipo entra por el enlace del pie. */}
           <Link to="/soy-estudiante" className="btn-secondary text-sm">
@@ -73,8 +74,9 @@ export default function Portada() {
             Tu hijo puede crear sus propios juegos y programas
           </h1>
           <p className="mt-3 text-lg text-slate-600">
-            Clases en vivo, una vez por semana, en grupos pequeños. Déjanos tus datos y te
-            llamamos para contarte cómo funciona y resolver tus dudas.
+            Varios cursos, cada uno con su propio lenguaje de programación. Clases en vivo, una
+            vez por semana, en grupos pequeños. Déjanos tus datos y te llamamos para contarte
+            cómo funciona y resolver tus dudas.
           </p>
         </div>
 
@@ -82,6 +84,7 @@ export default function Portada() {
           {/* Los cursos, para que sepa que esta pidiendo */}
           <section>
             <h2 className="text-lg font-semibold text-slate-900">Nuestros cursos</h2>
+            <p className="text-sm text-slate-500">Elige el que mejor le encaje por edad y por interés.</p>
             {cargando && <Cargando />}
             <MensajeError error={error} />
             <div className="mt-4 grid gap-4 sm:grid-cols-2">

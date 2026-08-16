@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import Icono from './Icono.jsx';
+import { useTitulo } from '../hooks/useTitulo.js';
 
 export function Spinner({ className = 'h-6 w-6' }) {
   return (
@@ -73,7 +74,17 @@ export function Badge({ children, tono = 'neutro' }) {
   );
 }
 
-export function EncabezadoPagina({ titulo, descripcion, acciones }) {
+/**
+ * Cabecera de una pagina. Ademas del titulo visible pone el de la pestaña del
+ * navegador, porque toda pagina pasa por aqui: hacerlo en cada una se olvidaria
+ * en la siguiente que se añada.
+ *
+ * `tituloPestana` sirve cuando el titulo visible no funciona fuera de la
+ * pantalla — "Hola, Ana" no dice nada en una pestaña.
+ */
+export function EncabezadoPagina({ titulo, descripcion, acciones, tituloPestana }) {
+  useTitulo(tituloPestana ?? (typeof titulo === 'string' ? titulo : undefined));
+
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>

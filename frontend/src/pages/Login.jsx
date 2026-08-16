@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Campo, MensajeError, Spinner } from '../components/ui.jsx';
 import Fondo from '../components/Fondo.jsx';
+import { MARCA } from '../lib/marca.js';
 
 export default function Login() {
   const { user, iniciarSesion, cargando } = useAuth();
@@ -38,11 +39,11 @@ export default function Login() {
         <div className="mb-6 text-center">
           <img
             src="/logo.svg"
-            alt="Python Kids"
+            alt={MARCA}
             className="logo-img mx-auto rounded-xl lg:rounded-2xl"
             style={{ '--logo-sm': '64px', '--logo-lg': '88px' }}
           />
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">Python Kids</h1>
+          <h1 className="mt-3 text-2xl font-bold text-slate-900">{MARCA}</h1>
           <p className="text-sm text-slate-500">Entrada del equipo · administradores, tutores y vendedores</p>
         </div>
 
@@ -78,7 +79,7 @@ export default function Login() {
           </button>
 
           <p className="text-center text-xs text-slate-400">
-            ¿Problemas para entrar? Escribe al administrador del curso.
+            ¿Problemas para entrar? Escribe al administrador de la plataforma.
           </p>
         </form>
 
