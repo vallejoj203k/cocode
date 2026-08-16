@@ -2,7 +2,9 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm run build"
+    "buildCommand": "npm run build",
+    "//": "Un solo servicio sirve el backend Y el build del frontend, asi que un cambio en frontend/ tiene que desplegar igual que uno en backend/. Con rutas vigiladas mas estrechas, Railway marca el despliegue como 'Skipped: no changes to watched files' y la version publicada se queda atras sin avisar.",
+    "watchPatterns": ["**"]
   },
   "deploy": {
     "startCommand": "npm start",
