@@ -132,6 +132,9 @@ aunque llame a la API directamente.
 
 La plataforma tiene dos pantallas de acceso a la misma cuenta y contraseña:
 
+Desde la portada pública, el botón **Entrar** lleva a `/soy-estudiante`: quien llega ahí es una
+familia. El equipo entra por el enlace del pie de página.
+
 | Ruta              | Para quién                | Cómo es                                              |
 | ----------------- | ------------------------- | ---------------------------------------------------- |
 | `/login`          | administradores, tutores y vendedores | Formulario compacto, el de siempre         |
