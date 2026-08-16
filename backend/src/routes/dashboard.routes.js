@@ -15,6 +15,7 @@ import {
   totalClasesPorCurso,
 } from '../services/curriculum.service.js';
 import { accesosDeEstudiante } from '../services/access.service.js';
+import { limpiar } from '../../prisma/limpiar.js';
 
 const router = Router();
 router.use(authenticate);
@@ -53,6 +54,9 @@ async function dashboardAdmin() {
   // Estados a medio hacer que no dan error por ningun lado pero dejan a una
   // familia sin ver nada. Son la causa mas comun de "asigne el curso y no
   // aparece", asi que se cuentan y se avisan en la primera pantalla.
+  // Cuantos datos de ejemplo quedan. En seco: aqui no se borra nada.
+  const { resumen: datosDemo } = await limpiar({ silencioso: true, cerrarConexion: false });
+
   const [ninosSinCuenta, cuentasSinNino, ninosSinCurso] = await Promise.all([
     prisma.student.count({ where: { activo: true, userId: null } }),
     prisma.user.count({ where: { rol: 'ESTUDIANTE', activo: true, estudiantes: { none: {} } } }),
@@ -94,7 +98,7 @@ async function dashboardAdmin() {
       sugerenciasNuevas,
       interesadosNuevos,
     },
-    revision: { ninosSinCuenta, cuentasSinNino, ninosSinCurso },
+    revision: { ninosSinCuenta, cuentasSinNino, ninosSinCurso, datosDemo },
     cursos: detalleCursos,
     finanzas: {
       mesActual: resumen.porMes.at(-1) ?? null,

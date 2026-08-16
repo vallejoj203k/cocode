@@ -572,21 +572,36 @@ Los despliegues siguientes aplican solas las migraciones nuevas al arrancar.
 
 ### Borrar los datos de ejemplo
 
-El seed crea tutores, familias y pagos de muestra para que la plataforma no se vea vacía. Para
-dejar solo información real:
+El seed crea tutores, familias, pagos y gastos de muestra para que la plataforma no se vea vacía
+al abrirla por primera vez. En cuanto se empieza a usar de verdad estorban: mezclan familias que
+no existen con las reales y descuadran el balance.
+
+**Desde la plataforma** (lo normal): el admin entra y, si quedan datos de ejemplo, el bloque
+*Cosas por revisar* de **Inicio** los cuenta y ofrece **Borrarlos**. La confirmación dice
+exactamente cuántos registros se van y qué se conserva. El aviso desaparece solo cuando ya no
+queda ninguno, así que no hay que acordarse de nada.
+
+**Desde la línea de comandos**, en desarrollo:
 
 ```bash
-npm run db:limpiar                              # simula: lista qué borraría
-npm run limpiar -w backend -- --confirmar       # borra los datos de ejemplo
+npm run db:limpiar                                # simula: lista qué borraría
+npm run limpiar -w backend -- --confirmar         # borra los datos de ejemplo
 npm run limpiar -w backend -- --todo --confirmar  # borra TODO lo operativo
 ```
 
-En Railway, donde no hay consola, se hace con variables: `LIMPIAR_AL_ARRANCAR=demo` (o `todo`)
-más `LIMPIAR_CONFIRMAR=true`. Sin la segunda solo escribe en el log lo que borraría. Quita
-ambas después de usarlas.
+Y en un despliegue sin consola, con variables: `LIMPIAR_AL_ARRANCAR=demo` (o `todo`) más
+`LIMPIAR_CONFIRMAR=true`. Sin la segunda solo escribe en el log lo que borraría. Quita ambas
+después de usarlas.
 
-**Nunca borra el currículo ni las cuentas de administrador.** Los cursos que hayas creado tú se
-eliminan desde Currículo → Eliminar curso.
+**Qué se conserva siempre**, sea cual sea la vía:
+
+- El **currículo** completo: cursos, módulos y clases.
+- Las cuentas de **administrador**.
+- **Todo lo que hayas creado tú**: familias, estudiantes, grupos, pagos y gastos reales.
+
+Lo de ejemplo se reconoce por los nombres y correos que escribe `seed.js`, incluidos los gastos
+—que no cuelgan de ningún estudiante y hay que buscar por su descripción, o se quedarían en el
+balance para siempre—. Los cursos que hayas creado tú se eliminan desde Cursos → Eliminar.
 
 ### Si borraste y recreaste la base de datos
 

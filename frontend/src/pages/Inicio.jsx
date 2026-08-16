@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFetch } from '../hooks/useApi.js';
 import {
   Badge,
   BarraProgreso,
   Cargando,
+  Confirmacion,
   EncabezadoPagina,
   EstadoVacio,
   MensajeError,
@@ -65,8 +68,29 @@ function GraficoBalance({ porMes }) {
  * Avisos de cosas a medio hacer. No son errores (la plataforma funciona), pero
  * dejan a una familia entrando a una pantalla vacia sin que nada lo delate.
  */
-function AvisosRevision({ revision }) {
+function AvisosRevision({ revision, onRecargar }) {
+  const [borrando, setBorrando] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
+  const [error, setError] = useState(null);
+
   if (!revision) return null;
+
+  const demo = revision.datosDemo ?? {};
+  const totalDemo = Object.values(demo).reduce((a, b) => a + b, 0);
+
+  const borrarDemo = async () => {
+    setBorrando(true);
+    setError(null);
+    try {
+      await api.post('/mantenimiento/datos-demo/borrar', { confirmar: true });
+      setConfirmar(false);
+      onRecargar();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBorrando(false);
+    }
+  };
 
   const pendientes = [
     revision.ninosSinCuenta && {
@@ -95,31 +119,67 @@ function AvisosRevision({ revision }) {
     },
   ].filter(Boolean);
 
-  if (pendientes.length === 0) return null;
+  if (pendientes.length === 0 && totalDemo === 0) return null;
 
   return (
-    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <h2 className="text-sm font-semibold text-amber-900">Cosas por revisar</h2>
-      <ul className="mt-2 space-y-2">
-        {pendientes.map((p) => (
-          <li key={p.texto} className="flex flex-wrap items-center gap-2 text-sm text-amber-800">
-            <span className="flex-1">{p.texto}</span>
-            <Link to={p.enlace} className="btn bg-white text-xs text-amber-900 hover:bg-amber-100">
-              {p.accion}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <h2 className="text-sm font-semibold text-amber-900">Cosas por revisar</h2>
+        <ul className="mt-2 space-y-2">
+          {pendientes.map((p) => (
+            <li key={p.texto} className="flex flex-wrap items-center gap-2 text-sm text-amber-800">
+              <span className="flex-1">{p.texto}</span>
+              <Link to={p.enlace} className="btn bg-white text-xs text-amber-900 hover:bg-amber-100">
+                {p.accion}
+              </Link>
+            </li>
+          ))}
+
+          {/* Los datos de ejemplo vienen del seed y estorban en cuanto se
+              empieza a usar la plataforma de verdad: mezclan familias que no
+              existen con las reales y descuadran el balance. */}
+          {totalDemo > 0 && (
+            <li className="flex flex-wrap items-center gap-2 text-sm text-amber-800">
+              <span className="flex-1">
+                Todavía hay datos de ejemplo: {demo.estudiantes} estudiantes, {demo.cuentas} cuentas,{' '}
+                {demo.grupos} grupos, {demo.pagos} pagos y {demo.gastos} gastos.
+              </span>
+              <button
+                type="button"
+                className="btn bg-white text-xs text-amber-900 hover:bg-amber-100"
+                onClick={() => setConfirmar(true)}
+              >
+                Borrarlos
+              </button>
+            </li>
+          )}
+        </ul>
+        <MensajeError error={error} />
+      </div>
+
+      <Confirmacion
+        abierto={confirmar}
+        titulo="Borrar los datos de ejemplo"
+        mensaje={
+          `Se borran ${demo.estudiantes} estudiantes de ejemplo, ${demo.cuentas} cuentas, ` +
+          `${demo.grupos} grupos, ${demo.pagos} pagos, ${demo.gastos} gastos y ${demo.sugerencias} sugerencias. ` +
+          'No se toca el currículo (cursos, módulos y clases), ni tu cuenta de administrador, ni nada que hayas creado tú. ' +
+          'Esta acción no se puede deshacer.'
+        }
+        textoConfirmar={borrando ? 'Borrando…' : 'Sí, borrar los datos de ejemplo'}
+        onConfirmar={borrarDemo}
+        onCancelar={() => setConfirmar(false)}
+      />
+    </>
   );
 }
 
-function InicioAdmin({ data }) {
+function InicioAdmin({ data, onRecargar }) {
   const { tarjetas, finanzas, grupos } = data;
 
   return (
     <>
-      <AvisosRevision revision={data.revision} />
+      <AvisosRevision revision={data.revision} onRecargar={onRecargar} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tarjeta titulo="Estudiantes activos" valor={tarjetas.estudiantesActivos} icono="estudiantes" />
@@ -555,7 +615,7 @@ export default function Inicio() {
                 : 'Así va el curso de tus estudiantes.'
         }
       />
-      {user.rol === 'ADMIN' && <InicioAdmin data={data} />}
+      {user.rol === 'ADMIN' && <InicioAdmin data={data} onRecargar={recargar} />}
       {user.rol === 'TUTOR' && <InicioTutor data={data} />}
       {user.rol === 'VENDEDOR' && <InicioVendedor data={data} />}
       {user.rol === 'ESTUDIANTE' && <InicioEstudiante data={data} />}
