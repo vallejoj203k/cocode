@@ -5,6 +5,7 @@ import { useFetch } from '../hooks/useApi.js';
 import { Campo, Cargando, MensajeError } from '../components/ui.jsx';
 import Icono from '../components/Icono.jsx';
 import Logo from '../components/Logo.jsx';
+import Fondo from '../components/Fondo.jsx';
 
 const VACIO = {
   nombre: '',
@@ -52,8 +53,10 @@ export default function Portada() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="relative min-h-screen bg-slate-50">
+      <Fondo />
+
+      <header className="relative border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <Logo tamano={38} subtitulo="Programación para niños" />
           {/* Quien llega a la portada es una familia, asi que "Entrar" lleva a
@@ -64,7 +67,7 @@ export default function Portada() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-10">
+      <main className="relative mx-auto max-w-5xl px-4 py-10">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
             Tu hijo puede crear sus propios juegos y programas
@@ -224,7 +227,7 @@ export default function Portada() {
         </div>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6">
+      <footer className="relative border-t border-slate-200 bg-white py-6">
         <div className="mx-auto max-w-5xl px-4 text-sm text-slate-500">
           ¿Eres del equipo?{' '}
           <Link to="/login" className="font-semibold text-marca-600 hover:underline">
