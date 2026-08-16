@@ -491,6 +491,13 @@ Applying migration `20260814210000_add_courses`
 [api] escuchando en http://localhost:8080 (production)
 ```
 
+> **Rutas vigiladas (watch paths).** Un solo servicio sirve el backend *y* el build del frontend,
+> así que un cambio en `frontend/` tiene que desplegar igual que uno en `backend/`. `railway.json`
+> lo declara con `watchPatterns: ["**"]`. Si en **Settings → Build → Watch Paths** hay algo escrito
+> a mano, **bórralo**: la interfaz gana sobre el fichero, y un filtro más estrecho hace que Railway
+> marque el despliegue como *"Skipped — no changes to watched files"* y la versión publicada se
+> quede atrás sin avisar.
+
 ### 5. Después del primer arranque
 
 1. Genera el dominio público (**Settings → Networking → Generate Domain**).
@@ -557,6 +564,28 @@ si se cambió el rol de un usuario a Estudiante.
 
 En **Usuarios** esas cuentas salen marcadas con **"Sin estudiante"**; al pulsar *Editar* se
 puede crear el niño y asignarle sus cursos sin salir del formulario.
+
+### El despliegue sale como "Skipped"
+
+```
+Skipped
+No changes to watched files
+```
+
+Railway no llegó a construir nada: decidió que el commit no tocaba ningún fichero de los que
+vigila. Pasa cuando las **Watch Paths** del servicio apuntan solo a una carpeta (`backend/**`,
+por ejemplo) y el commit era solo de interfaz. Aquí eso siempre está mal, porque el mismo
+servicio publica el backend y el build del frontend.
+
+El síntoma engaña: la plataforma sigue **Online** y funcionando, pero con la versión anterior. No
+hay ningún error que mirar porque no hubo despliegue.
+
+1. Servicio del backend → **Settings → Build → Watch Paths**.
+2. **Deja el campo vacío.** Lo que se escribe ahí gana sobre `railway.json`.
+3. Vuelve a desplegar el último commit (**Deployments → ⋯ → Redeploy**): el que se saltó no se
+   recupera solo.
+
+Para comprobar qué versión está publicada de verdad, abre `/api`: devuelve el commit desplegado.
 
 ### Si no puedes entrar: "Email o contraseña incorrectos"
 
