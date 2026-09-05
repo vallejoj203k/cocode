@@ -10,6 +10,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { env } from '../config/env.js';
 import { asyncHandler } from '../lib/http.js';
 import { toJSON } from '../lib/serialize.js';
 import { validate } from '../middleware/validate.js';
@@ -50,6 +51,15 @@ const limiteInteresados = rateLimit({
   message: {
     error: 'Hemos recibido varias solicitudes desde aqui. Intenta de nuevo en un rato o escribenos por telefono.',
   },
+});
+
+/**
+ * Ajustes que la portada necesita saber antes de dibujarse. Va aparte del
+ * catalogo porque no depende de la base de datos y puede cambiar sin tocar
+ * cursos.
+ */
+router.get('/config', (_req, res) => {
+  res.json({ whatsapp: env.whatsapp });
 });
 
 /** Cursos que se ofrecen, con lo justo para decidir si interesan. */

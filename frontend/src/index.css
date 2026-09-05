@@ -66,3 +66,70 @@
     }
   }
 }
+
+/* --- Portada publica ---------------------------------------------------- */
+
+@layer utilities {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Entradas del contenido al aparecer en pantalla. Cada bloque entra desde el
+     lado por el que esta colocado, para que el movimiento acompane la lectura
+     en vez de cruzarse con ella. */
+  @keyframes lpIzquierda {
+    0% { opacity: 0; transform: translateX(-38vw) rotate(-5deg) scale(0.95); }
+    62% { opacity: 1; transform: translateX(12px) rotate(1deg) scale(1.015); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes lpDerecha {
+    0% { opacity: 0; transform: translateX(38vw) rotate(5deg) scale(0.95); }
+    62% { opacity: 1; transform: translateX(-12px) rotate(-1deg) scale(1.015); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes lpArriba {
+    0% { opacity: 0; transform: translateY(-34vh) scale(0.95); }
+    62% { opacity: 1; transform: translateY(10px) scale(1.015); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes lpAbajo {
+    0% { opacity: 0; transform: translateY(34vh) scale(0.95); }
+    62% { opacity: 1; transform: translateY(-10px) scale(1.015); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes lpLatido {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(30, 158, 90, 0.55); }
+    70% { box-shadow: 0 0 0 9px rgba(30, 158, 90, 0); }
+  }
+  @keyframes lpDesplegar {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .lp-entra { animation-duration: 0.95s; animation-timing-function: cubic-bezier(0.22, 1.05, 0.36, 1); animation-fill-mode: both; }
+  .lp-izquierda { animation-name: lpIzquierda; }
+  .lp-derecha { animation-name: lpDerecha; }
+  .lp-arriba { animation-name: lpArriba; }
+  .lp-abajo { animation-name: lpAbajo; }
+  .lp-latido { animation: lpLatido 2.4s infinite; }
+
+  /* El acordeon de preguntas, sin el triangulo del navegador. */
+  .lp-faq summary { list-style: none; cursor: pointer; }
+  .lp-faq summary::-webkit-details-marker { display: none; }
+  .lp-faq[open] .lp-mas { transform: rotate(45deg); }
+  .lp-faq[open] > div { animation: lpDesplegar 0.35s ease both; }
+
+  /**
+   * Quien pide en su sistema que no le muevan la pantalla no deberia recibir
+   * bloques volando ni un monigote dando volteretas: hay personas a las que eso
+   * les produce mareo. Se queda todo quieto y visible, que es lo que importa.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .lp-entra, .lp-latido, .lp-faq[open] > div {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+}
