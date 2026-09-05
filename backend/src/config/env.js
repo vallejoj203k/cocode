@@ -70,6 +70,12 @@ export const env = {
     adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@pythonkids.com',
     adminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'Admin123*',
   },
+  /**
+   * Numero de WhatsApp de contacto, solo digitos con indicativo del pais
+   * (ej. 573001234567). Si no esta puesto, la portada no muestra los botones de
+   * WhatsApp: es mejor no ofrecer un canal que llevar a un numero inventado.
+   */
+  whatsapp: (process.env.WHATSAPP_NUMERO ?? '').replace(/[^0-9]/g, '') || null,
   // Valor mensual de referencia del curso, usado por el estado de cartera.
   mensualidad: Number(process.env.VALOR_MENSUALIDAD ?? 120000),
 };

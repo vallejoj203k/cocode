@@ -105,6 +105,22 @@ El enlace se valida como URL en el formulario y también en el servidor.
 La raíz `/` es **pública**: presenta los cursos y recoge un teléfono al que llamar. No pide crear
 una cuenta, porque una cuenta sin pago confirmado no le sirve a nadie.
 
+Es una página de venta con su propio aire —tipografía Manrope, paleta `logic`, entradas animadas y
+una mascota que hace acrobacias según se baja— separada a propósito del resto: la portada convence
+una vez, la plataforma se usa cada semana. Los estilos de una no deben arrastrar a la otra.
+
+Tres cosas que **no** son decorativas:
+
+- **Los cursos salen de la base de datos**, no del diseño. Las tarjetas y el desplegable se llenan
+  con `/api/public/courses`, y el botón *Quiero información* de cada tarjeta baja al formulario con
+  ese curso ya elegido. Crear un curso desde la plataforma lo publica en la portada.
+- **`prefers-reduced-motion` se respeta.** Quien pide en su sistema que no le muevan la pantalla no
+  recibe bloques volando ni un monigote dando volteretas: hay personas a las que eso les marea. Todo
+  queda quieto **y visible** — una animación que no arranca nunca debe esconder el texto.
+- **El número de WhatsApp es configuración** (`WHATSAPP_NUMERO`, solo dígitos con indicativo). Sin
+  esa variable no se dibuja ningún botón de WhatsApp: es mejor no ofrecer un canal que llevar a un
+  número que no existe.
+
 ```
 Visitante deja sus datos en /   →   Lead (NUEVO)
 Vendedor llama                  →   Lead (CONTACTADO)
