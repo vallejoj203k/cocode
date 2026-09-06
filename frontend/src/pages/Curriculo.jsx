@@ -12,6 +12,7 @@ import {
   MensajeError,
 } from '../components/ui.jsx';
 import { FormularioCurso } from '../components/curriculo/index.jsx';
+import BotonPdf from '../components/curriculo/BotonPdf.jsx';
 import Icono from '../components/Icono.jsx';
 
 /**
@@ -129,9 +130,14 @@ export default function Curriculo() {
 
               {/* El boton principal queda abajo aunque las tarjetas midan distinto. */}
               <div className="mt-auto pt-4">
-                <Link to={`/curriculo/${curso.id}`} className="btn-primary w-full">
-                  Ver el plan de clases
-                </Link>
+                <div className="flex gap-2">
+                  <Link to={`/curriculo/${curso.id}`} className="btn-primary flex-1">
+                    Ver el plan de clases
+                  </Link>
+                  {/* Se descarga desde la tarjeta: cuando una familia pregunta por
+                      un curso concreto no hay que entrar a el para mandarle el plan. */}
+                  <BotonPdf curso={curso} onError={setErrorAccion} />
+                </div>
 
                 {esAdmin && (
                   <div className="mt-2 flex gap-2">

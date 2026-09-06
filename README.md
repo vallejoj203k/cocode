@@ -332,6 +332,40 @@ Cada curso tiene URL propia, así que se puede guardar en favoritos o compartir 
 por URL un curso al que no se tiene acceso muestra "Curso no encontrado" con un enlace de vuelta al
 catálogo: la API responde `404`, igual que para un curso inexistente, para no delatar que existe.
 
+### El plan de un curso en PDF
+
+Cuando una familia pregunta por un curso hay que poder mandarle el temario. El botón **PDF** está
+en los dos sitios: en cada tarjeta del catálogo (para no tener que entrar al curso) y en la
+cabecera del curso abierto.
+
+**Qué lleva y qué no lleva**, que es lo que de verdad importa:
+
+| Lleva                                                        | No lleva                          |
+| ------------------------------------------------------------ | --------------------------------- |
+| Portada con la marca, el nombre del curso y su descripción    | El **contenido de las clases**    |
+| Módulos, clases, duración y edad sugerida en cajas de resumen | Los conceptos clave               |
+| Cada módulo con su objetivo y el listado de clases por título | Los enlaces a recursos            |
+
+El documento se entrega **antes de cobrar**, y el contenido de las clases es justo lo que se
+vende: un temario convence, el plan de clase entero se regala. La suite `e2e-pdf.mjs` comprueba
+esto en el PDF ya generado —extrae su texto y busca el contenido de las 44 clases— para que un
+cambio futuro en el generador no lo filtre sin que nadie se entere.
+
+Detalles de implementación:
+
+- Se genera **en el navegador** con [jsPDF](https://github.com/parallax/jsPDF); no hay endpoint
+  ni cola en el servidor porque no hace falta: los datos ya están cargados en la página.
+- La librería se carga con `import()` **al pulsar el botón**: son ~390 kB que no tiene por qué
+  descargar quien solo entra a consultar el currículo. Vite la deja en su propio chunk.
+- Desde el catálogo la tarjeta solo conoce los contadores, así que al pulsar pide los módulos
+  de ese curso; desde la ficha se reutilizan los que ya están en pantalla.
+- Un curso todavía sin módulos deja el botón desactivado: no hay nada que imprimir.
+- El fichero se llama `Logic-Plus-<Nombre-del-curso>.pdf`, sin acentos, porque es lo que la
+  familia verá en su carpeta de descargas dentro de tres semanas.
+
+El código vive en `frontend/src/lib/pdfCurso.js` (la maquetación) y
+`frontend/src/components/curriculo/BotonPdf.jsx` (el botón, compartido por las dos páginas).
+
 ### Quién ve qué currículo
 
 El currículo no es público para cualquier usuario con sesión: un estudiante solo ve los cursos
@@ -787,5 +821,6 @@ frontend/
     api/               cliente HTTP y manejo del token
     context/           sesión (AuthContext)
     components/        layout, rutas protegidas y UI compartida
+    lib/               marca y generación del PDF del curso
     pages/             una vista por sección, diferenciada por rol
 ```

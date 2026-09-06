@@ -16,6 +16,7 @@ import {
   FormularioCurso,
   FormularioModulo,
 } from '../components/curriculo/index.jsx';
+import BotonPdf from '../components/curriculo/BotonPdf.jsx';
 import Icono from '../components/Icono.jsx';
 
 /** Plan de clases de un curso: sus modulos y, dentro, sus clases. */
@@ -109,6 +110,8 @@ export default function CursoDetalle() {
           .join(' · ')}
         acciones={
           <>
+            <BotonPdf curso={curso} modulos={modulos ?? []} onError={setErrorAccion} />
+
             {esAdmin && (
               <>
                 <button
